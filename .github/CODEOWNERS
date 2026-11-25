@@ -1,0 +1,13 @@
+# GitHub requests a review from the code owners on every PR (the PR author is skipped),
+# so each of us is automatically asked to review the other's work. Areas follow CLAUDE.md.
+
+*                     @iamAdarshh @anmolmathur15
+
+# Doctor engine, rules, CLI and Flagsmith client code: Adarsh leads, Anmol reviews
+/lib/                 @iamAdarshh @anmolmathur15
+/scripts/doctor*.ts   @iamAdarshh @anmolmathur15
+
+# UI, agent runner and Flagsmith setup scripts: Anmol leads, Adarsh reviews
+/components/          @anmolmathur15 @iamAdarshh
+/app/                 @anmolmathur15 @iamAdarshh
+/scripts/agents/      @anmolmathur15 @iamAdarshh
