@@ -1,0 +1,15 @@
+[
+  {
+    "ruleId": "selfhosted-events-url",
+    "confidence": "certain",
+    "source": "code",
+    "line": 8,
+    "column": 43,
+    "message": "eventsApiUrl ends with /v1/events, but the SDK adds that itself; use \"https://flagsmith.example.com/api/\".",
+    "docsUrl": "https://docs.flagsmith.com/experimentation/self-hosting",
+    "patch": {
+      "before": "    eventProcessorConfig: { eventsApiUrl: 'https://flagsmith.example.com/api/v1/events' },",
+      "after": "    eventProcessorConfig: { eventsApiUrl: 'https://flagsmith.example.com/api/' },"
+    }
+  }
+]

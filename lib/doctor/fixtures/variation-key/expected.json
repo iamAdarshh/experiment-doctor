@@ -1,0 +1,12 @@
+[
+  {
+    "ruleId": "variation-key",
+    "confidence": "certain",
+    "source": "flagJson",
+    "message": "Variation 1 (\"green\") has no key, so it isn't counted in experiments.",
+    "docsUrl": "https://docs.flagsmith.com/experimentation/create-an-experiment",
+    "patch": {
+      "command": "flagsmith feature variant add checkout_button --value green --key green --weight 0   # then remove the old variation in the dashboard"
+    }
+  }
+]

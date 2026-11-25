@@ -1,0 +1,11 @@
+[
+  {
+    "ruleId": "identity-mismatch",
+    "confidence": "possible",
+    "source": "code",
+    "line": 12,
+    "column": 3,
+    "message": "trackEvent() uses the identity user.email, but getExperimentFlag() on line 11 uses user.id; if they differ, conversions aren't counted.",
+    "docsUrl": "https://docs.flagsmith.com/experimentation/run-an-experiment"
+  }
+]

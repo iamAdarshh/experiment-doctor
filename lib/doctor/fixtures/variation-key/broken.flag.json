@@ -1,0 +1,13 @@
+{
+  "name": "checkout_button",
+  "type": "MULTIVARIATE",
+  "initial_value": "blue",
+  "multivariate_options": [
+    {
+      "id": 101,
+      "type": "unicode",
+      "string_value": "green",
+      "default_percentage_allocation": 0
+    }
+  ]
+}

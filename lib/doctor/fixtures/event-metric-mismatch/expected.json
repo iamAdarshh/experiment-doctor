@@ -1,0 +1,15 @@
+[
+  {
+    "ruleId": "event-metric-mismatch",
+    "confidence": "certain",
+    "source": "code",
+    "line": 16,
+    "column": 24,
+    "message": "The event \"Purchase\" matches no metric name (names are case-sensitive); did you mean \"purchase\"?",
+    "docsUrl": "https://docs.flagsmith.com/experimentation/run-an-experiment",
+    "patch": {
+      "before": "  flagsmith.trackEvent('Purchase', { value: total });",
+      "after": "  flagsmith.trackEvent('purchase', { value: total });"
+    }
+  }
+]

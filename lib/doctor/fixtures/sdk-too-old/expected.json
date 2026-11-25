@@ -1,0 +1,26 @@
+[
+  {
+    "ruleId": "sdk-too-old",
+    "confidence": "certain",
+    "source": "dependencies",
+    "line": 4,
+    "message": "@flagsmith/flagsmith 12.3.0 is too old to send experiment events; use 12.4.0 or later.",
+    "docsUrl": "https://docs.flagsmith.com/experimentation/run-an-experiment",
+    "patch": {
+      "before": "    \"@flagsmith/flagsmith\": \"12.3.0\",",
+      "after": "    \"@flagsmith/flagsmith\": \"12.4.0\","
+    }
+  },
+  {
+    "ruleId": "sdk-too-old",
+    "confidence": "certain",
+    "source": "dependencies",
+    "line": 5,
+    "message": "The \"flagsmith-nodejs\" package can't send experiment events; switch to \"@flagsmith/nodejs\" 9.1.0 or later (and update the imports).",
+    "docsUrl": "https://docs.flagsmith.com/experimentation/run-an-experiment",
+    "patch": {
+      "before": "    \"flagsmith-nodejs\": \"^2.5.0\",",
+      "after": "    \"@flagsmith/nodejs\": \"^9.1.0\","
+    }
+  }
+]

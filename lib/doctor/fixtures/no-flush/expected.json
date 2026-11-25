@@ -1,0 +1,15 @@
+[
+  {
+    "ruleId": "no-flush",
+    "confidence": "certain",
+    "source": "code",
+    "line": 10,
+    "column": 22,
+    "message": "Events are never flushed: call flushEvents() before the response is sent, or close() before the process exits.",
+    "docsUrl": "https://docs.flagsmith.com/experimentation/run-an-experiment",
+    "patch": {
+      "before": "  flagsmith.trackEvent('purchase', { identifier: userId, value: 10 });",
+      "after": "  flagsmith.trackEvent('purchase', { identifier: userId, value: 10 });\n  await flagsmith.flushEvents();"
+    }
+  }
+]

@@ -1,0 +1,11 @@
+[
+  {
+    "ruleId": "no-identity",
+    "confidence": "certain",
+    "source": "code",
+    "line": 11,
+    "column": 10,
+    "message": "No identify() call before experiment calls, so this visitor's exposures and events are skipped.",
+    "docsUrl": "https://docs.flagsmith.com/experimentation/run-an-experiment"
+  }
+]

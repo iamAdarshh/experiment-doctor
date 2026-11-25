@@ -1,0 +1,15 @@
+[
+  {
+    "ruleId": "analytics-vs-events",
+    "confidence": "certain",
+    "source": "code",
+    "line": 4,
+    "column": 9,
+    "message": "enableAnalytics only records flag usage; experiment events also need enableEvents: true.",
+    "docsUrl": "https://docs.flagsmith.com/experimentation/run-an-experiment",
+    "patch": {
+      "before": "    environmentID: 'env_abc123',",
+      "after": "    enableEvents: true,\n    environmentID: 'env_abc123',"
+    }
+  }
+]

@@ -1,0 +1,15 @@
+[
+  {
+    "ruleId": "no-exposure",
+    "confidence": "possible",
+    "source": "code",
+    "line": 12,
+    "column": 10,
+    "message": "If \"checkout_button\" is the experiment flag, reading it with getValue records no exposure, so conversions aren't counted; use getExperimentFlag.",
+    "docsUrl": "https://docs.flagsmith.com/experimentation/run-an-experiment",
+    "patch": {
+      "before": "  return flagsmith.getValue('checkout_button');",
+      "after": "  return flagsmith.getExperimentFlag('checkout_button')?.value;"
+    }
+  }
+]

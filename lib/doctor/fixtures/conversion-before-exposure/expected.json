@@ -1,0 +1,11 @@
+[
+  {
+    "ruleId": "conversion-before-exposure",
+    "confidence": "possible",
+    "source": "code",
+    "line": 9,
+    "column": 3,
+    "message": "trackEvent runs before the experiment flag is read on line 10; conversions before the first exposure aren't counted.",
+    "docsUrl": "https://docs.flagsmith.com/experimentation/run-an-experiment"
+  }
+]

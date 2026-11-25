@@ -1,0 +1,8 @@
+{
+  "name": "shop",
+  "dependencies": {
+    "@flagsmith/flagsmith": "12.4.0",
+    "@flagsmith/nodejs": "^9.1.0",
+    "next": "15.5.29"
+  }
+}
