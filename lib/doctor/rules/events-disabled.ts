@@ -17,20 +17,24 @@ export const rule: Rule = {
     }
     const issues: Issue[] = [];
     let readableConfigs = 0;
+    // When another client in the paste does enable events, a client without them is often a deliberate
+    // read-only one (it evaluates flags; the other sends the events), so it is only "possible" then.
+    const someClientSendsEvents = code.configs.some((config) => config.props.get('enableEvents')?.bool === true);
     for (const config of code.configs) {
       const state = classifyConfig(config, true);
       if (state !== 'unknown') readableConfigs += 1;
       if (state !== 'missing-events' && state !== 'events-false') continue;
       issues.push({
         ruleId: 'events-disabled',
-        confidence: 'certain',
+        confidence: someClientSendsEvents ? 'possible' : 'certain',
         source: 'code',
         line: config.line,
         column: config.column,
         message:
-          state === 'events-false'
+          (state === 'events-false'
             ? 'enableEvents is set to false, so exposures and conversions are never sent. Set it to true.'
-            : 'The Flagsmith options lack enableEvents: true, so exposures and conversions are silently dropped.',
+            : 'The Flagsmith options lack enableEvents: true, so exposures and conversions are silently dropped.') +
+          (someClientSendsEvents ? ' (Another client here enables events; this matters only if this client records exposures or conversions.)' : ''),
         docsUrl: DOCS.runExperiment,
         patch: enableEventsPatch(input.code, config),
       });

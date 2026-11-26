@@ -14,8 +14,10 @@ export const rule: Rule = {
     const exposures = exposureCalls(code);
     const issues: Issue[] = [];
     for (const conversion of flagsmithCalls(code, 'trackEvent')) {
-      const laterExposure = exposures.find((exposure) => exposure.scopeId === conversion.scopeId && exposure.start > conversion.start);
-      const earlierExposure = exposures.find((exposure) => exposure.scopeId === conversion.scopeId && exposure.start < conversion.start);
+      // Same function in the same pasted file: the top level of two files (scopeId -1 in both) is not one scope.
+      const sameScope = exposures.filter((exposure) => exposure.file === conversion.file && exposure.scopeId === conversion.scopeId);
+      const laterExposure = sameScope.find((exposure) => exposure.start > conversion.start);
+      const earlierExposure = sameScope.find((exposure) => exposure.start < conversion.start);
       if (!laterExposure || earlierExposure) continue;
       issues.push({
         ruleId: 'conversion-before-exposure',
