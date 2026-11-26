@@ -1,0 +1,40 @@
+{
+  "name": "pacing-wars",
+  "version": "0.1.0",
+  "private": true,
+  "description": "An A/B test with Flagsmith Experimentation: retry on 429 with full jitter vs client-side token pacing, for queued LLM jobs.",
+  "license": "MIT",
+  "author": "Krrish Kumar (https://github.com/Krrishkumar125)",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "fake-llm": "tsx src/fake-llm/main.ts",
+    "worker": "tsx src/worker/main.ts",
+    "simulate": "tsx src/sim/main.ts",
+    "bootstrap": "tsx scripts/bootstrap-flagsmith.ts",
+    "report": "tsx src/report/main.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "experiment": "tsx scripts/experiment.ts",
+    "peek": "tsx scripts/peek.ts",
+    "dashboard": "tsx src/dashboard/main.ts",
+    "demo": "tsx scripts/demo.ts"
+  },
+  "dependencies": {
+    "@flagsmith/nodejs": "^9.5.0",
+    "bullmq": "^6.7.10",
+    "ioredis": "^6.1.0",
+    "llm-pacer": "^0.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "prettier": "^3.10.1",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.1"
+  }
+}

@@ -1,0 +1,153 @@
+// Source-File AI Declaration
+// AI contribution: 50% or more AI-generated
+
+import { useEffect, useState, type ReactNode } from 'react'
+import { Navigate, Route, Routes, useLocation } from 'react-router'
+import { useFlags, useFlagsmithLoading } from '@flagsmith/flagsmith/react'
+import './styles/tokens.css'
+import './styles/global.css'
+import { fetchCurrentUser, type AuthUser } from './api/auth'
+import { Sidebar } from './layout/Sidebar'
+import {
+  getVisibleNavigation,
+  PAGE_FLAG_NAMES,
+  PAGE_FLAGS,
+  readDashboardLinkState,
+  type PageId,
+  type SettingsView,
+} from './layout/navigation'
+import { ToastProvider } from './components/Toast'
+import { MockDataProvider } from './mocks/MockDataProvider'
+import { Home } from './pages/Home'
+import { RecommendedOrders } from './pages/RecommendedOrders'
+import { Forecast } from './pages/Forecast'
+import { MenuMapping } from './pages/MenuMapping'
+import { Inventory } from './pages/Inventory'
+import { Settings } from './pages/Settings'
+import LoginPage from './pages/LoginPage'
+import SignupPage from './pages/SignupPage'
+import ToastSettingsPage from './pages/ToastSettingsPage'
+
+function Dashboard({ user, onLoggedOut }: { user?: AuthUser; onLoggedOut?: () => void }) {
+  // A link can ask to open a given page first (see DashboardLinkState). It only sets the
+  // starting page, so moving around afterwards works as usual.
+  const opening = readDashboardLinkState(useLocation().state)
+  const [page, setPage] = useState<PageId>(opening?.page ?? 'home')
+  const [settingsView, setSettingsView] = useState<SettingsView>(opening?.settingsView ?? 'main')
+  const flags = useFlags(PAGE_FLAG_NAMES)
+  const loading = useFlagsmithLoading()
+  const isPageEnabled = (pageId: PageId) => flags[PAGE_FLAGS[pageId]]?.enabled ?? false
+  const navigation = getVisibleNavigation((flag) => flags[flag]?.enabled ?? false)
+  const enabledPages = new Set(navigation.map(({ id }) => id))
+  const selectedPage = navigation.some((item) => item.id === page)
+    ? page
+    : navigation[0]?.id ?? null
+
+  // Moving to a page always shows its main view, even after a link opened Import directly.
+  const goTo = (nextPage: PageId) => {
+    setSettingsView('main')
+    setPage(nextPage)
+  }
+
+  const pages: Record<PageId, ReactNode> = {
+    home: <Home onNavigate={goTo} enabledPages={enabledPages} />,
+    orders: <RecommendedOrders />,
+    forecast: <Forecast />,
+    menu: <MenuMapping />,
+    inventory: <Inventory />,
+    settings: <Settings initialView={settingsView} />,
+  }
+
+  if (loading?.isLoading) {
+    return <main className="content"><p role="status">Loading feature flags…</p></main>
+  }
+
+  return (
+    <MockDataProvider>
+      <ToastProvider>
+        <div className="app">
+          <Sidebar
+            page={selectedPage}
+            items={navigation}
+            onNavigate={(nextPage) => {
+              if (isPageEnabled(nextPage)) goTo(nextPage)
+            }}
+            user={user}
+            onLoggedOut={onLoggedOut}
+          />
+          <main className="content">
+            {loading?.error && (
+              <p role="alert">Feature flags could not be refreshed. Disabled pages remain hidden.</p>
+            )}
+            {selectedPage ? pages[selectedPage] : (
+              <section className="card" role="status">
+                No pages are enabled for this environment.
+              </section>
+            )}
+          </main>
+        </div>
+      </ToastProvider>
+    </MockDataProvider>
+  )
+}
+
+function App() {
+  const [user, setUser] = useState<AuthUser | null>(null)
+  const [checkingSession, setCheckingSession] = useState(true)
+
+  // On a full page load, restore the user from the session cookie before routing,
+  // so protected routes don't redirect to /login while the check is in flight.
+  useEffect(() => {
+    let cancelled = false
+    void fetchCurrentUser().then((currentUser) => {
+      if (cancelled) return
+      // Keep a user who logged in while the check was in flight.
+      setUser((existing) => existing ?? currentUser)
+      setCheckingSession(false)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  if (checkingSession) {
+    return null
+  }
+
+  return (
+    <Routes>
+      <Route
+        path="/login"
+        element={user ? <Navigate to="/" replace /> : <LoginPage onLoggedIn={setUser} />}
+      />
+      <Route
+        path="/signup"
+        element={user ? <Navigate to="/" replace /> : <SignupPage onSignedUp={setUser} />}
+      />
+      <Route
+        path="/"
+        element={
+          user ? (
+            <Dashboard user={user} onLoggedOut={() => setUser(null)} />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+      <Route path="/mockup" element={<Dashboard />} />
+      <Route
+        path="/settings/pos"
+        element={
+          user ? (
+            <ToastSettingsPage key={user.restaurant_id} user={user} />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  )
+}
+
+export default App

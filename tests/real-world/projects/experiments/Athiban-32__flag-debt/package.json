@@ -1,0 +1,38 @@
+{
+  "name": "flag-debt",
+  "version": "1.1.0",
+  "description": "Find stale, unused and missing feature flags by comparing your code with (self-hosted) Flagsmith",
+  "type": "module",
+  "bin": {
+    "flag-debt": "bin/flag-debt.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "action.yml"
+  ],
+  "engines": {
+    "node": ">=20.6"
+  },
+  "scripts": {
+    "quickstart": "docker compose -f selfhost/docker-compose.yml up -d --wait flagsmith && node selfhost/seed.mjs && node --env-file=selfhost/.env.demo bin/flag-debt.mjs --src example --format html --output flag-health.html",
+    "selfhost:up": "docker compose -f selfhost/docker-compose.yml up -d --wait flagsmith",
+    "selfhost:down": "docker compose -f selfhost/docker-compose.yml down",
+    "seed": "node selfhost/seed.mjs",
+    "demo": "node --env-file=selfhost/.env.demo bin/flag-debt.mjs --src example --format html --output flag-health.html",
+    "test": "node --test test/*.test.mjs"
+  },
+  "keywords": [
+    "flagsmith",
+    "feature-flags",
+    "technical-debt",
+    "github-action",
+    "self-hosted"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Athiban-32/flag-debt.git"
+  },
+  "homepage": "https://github.com/Athiban-32/flag-debt#readme"
+}

@@ -1,6 +1,7 @@
 @import "tailwindcss";
 /* Design skills in .claude/ contain HTML and JS demos; keep their class names out of our CSS. */
 @source not "../.claude";
+@source not "../tests/real-world";
 
 /*
  * Design tokens: a quiet monochrome palette. The interface is black and grey; colour is kept for meaning only

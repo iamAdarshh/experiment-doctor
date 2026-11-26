@@ -1,0 +1,31 @@
+{
+  "name": "toggle-wars",
+  "version": "0.1.0",
+  "description": "Evolve your landing page: AI-generated variants battle in Flagsmith experiments, judged by a swarm of synthetic users.",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "arena": "tsx src/arena/server.ts",
+    "evolve": "tsx src/evolve.ts",
+    "preview": "tsx src/preview.ts",
+    "doctor": "tsx src/tools/ping-models.ts",
+    "ship": "tsx src/tools/ship-champion.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@flagsmith/nodejs": "^9.5.0",
+    "@google/genai": "^3.6.1",
+    "dotenv": "^18.0.10",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@flagsmith/cli": "^2.0.0",
+    "@types/node": "^26.6.11",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

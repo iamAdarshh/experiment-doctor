@@ -1,0 +1,1 @@
+{"name":"flagscope-simulator","private":true,"type":"module","version":"0.0.0","dependencies":{"@flagsmith/nodejs":"9.5.0"},"scripts":{"simulate":"node simulate.mjs"}}

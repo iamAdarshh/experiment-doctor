@@ -1,0 +1,3 @@
+{ "name": "ship-safely-demo", "private": true, "type": "module",
+  "scripts": { "start": "node server.mjs", "health": "node health.mjs" },
+  "dependencies": { "flagsmith-nodejs": "^6" } }

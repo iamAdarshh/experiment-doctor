@@ -1,0 +1,13 @@
+{
+  "name": "flaglens-demo-shop",
+  "private": true,
+  "description": "A tiny shop whose banner, checkout and button colour are driven by self-hosted Flagsmith. Used by the FlagLens demo.",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "@flagsmith/nodejs": "^9.5.0"
+  }
+}

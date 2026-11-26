@@ -1,0 +1,54 @@
+{
+  "name": "@greengate/flagsmith",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Carbon-aware feature modes for Flagsmith. Grid carbon level goes in as identity traits; Flagsmith segments choose full, eco, or off.",
+  "license": "MIT",
+  "author": "ANEEK DAS",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aneek22112007-tech/greengate.git",
+    "directory": "packages/greengate"
+  },
+  "homepage": "https://github.com/aneek22112007-tech/greengate#readme",
+  "bugs": {
+    "url": "https://github.com/aneek22112007-tech/greengate/issues"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "peerDependencies": {
+    "@flagsmith/nodejs": ">=9.1.0"
+  },
+  "peerDependenciesMeta": {
+    "@flagsmith/nodejs": {
+      "optional": true
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "flagsmith",
+    "feature-flags",
+    "carbon-aware",
+    "green-software"
+  ]
+}

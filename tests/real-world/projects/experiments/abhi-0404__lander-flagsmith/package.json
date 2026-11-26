@@ -1,0 +1,12 @@
+{
+  "name": "lander-simulator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "simulate": "tsx simulate.ts"
+  },
+  "dependencies": {
+    "@flagsmith/nodejs": "9.5.0"
+  }
+}
