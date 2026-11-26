@@ -19,7 +19,7 @@ export default async function ResultsPage() {
 
       <section className="space-y-3">
         <h2 className="font-display text-2xl font-semibold tracking-tight">Pre-registered design</h2>
-        <ul className="max-w-[70ch] list-disc space-y-2 pl-5 leading-relaxed marker:text-ember-600">
+        <ul className="max-w-[70ch] list-disc space-y-2 pl-5 leading-relaxed marker:text-muted">
           <li>
             Hypothesis: showing a ready-made fix (variant <code>patch</code>) instead of an issue list with docs links (control{' '}
             <code>issues</code>) raises the share of teams that reach a clean re-scan in one visit, without slowing them down.

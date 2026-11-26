@@ -16,7 +16,7 @@ export function SiteHeader() {
     <header className="border-b border-line">
       <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-5 py-4 sm:px-6">
         <Link href="/" className="flex items-center gap-2 font-display text-lg font-semibold tracking-tight">
-          <PulseIcon className="size-6 text-ember-600" />
+          <PulseIcon className="size-6 text-ink" />
           Experiment Doctor
         </Link>
         <nav aria-label="Main">
@@ -28,7 +28,7 @@ export function SiteHeader() {
                   <Link
                     href={link.href}
                     aria-current={current ? 'page' : undefined}
-                    className={`inline-block rounded-full px-3 py-1.5 transition-colors ${current ? 'bg-sand text-ink' : 'text-muted hover:bg-sand hover:text-ink'}`}
+                    className={`inline-block rounded-full px-3 py-1.5 transition-colors ${current ? 'bg-surface text-ink' : 'text-muted hover:bg-surface hover:text-ink'}`}
                   >
                     {link.label}
                   </Link>

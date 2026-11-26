@@ -88,7 +88,7 @@ function FixBlock({ patch, onCopy }: { patch: Patch; onCopy: () => void }) {
         <button
           type="button"
           onClick={() => void copy()}
-          className="inline-flex min-h-10 items-center gap-2 rounded-full border border-line bg-white px-4 text-sm font-semibold text-ink transition-colors hover:border-ember-600 hover:text-ember-800"
+          className="inline-flex min-h-10 items-center gap-2 rounded-full border border-line bg-white px-4 text-sm font-semibold text-ink transition-colors hover:border-ink"
         >
           {state === 'copied' ? <CheckIcon className="size-4 text-leaf-700" /> : <CopyIcon className="size-4" />}
           {state === 'copied' ? 'Copied' : 'Copy fix'}
