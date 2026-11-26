@@ -1,21 +1,27 @@
 import Link from 'next/link';
 import { DoctorApp } from '@/components/DoctorApp';
+import { ArrowRightIcon, FlaskIcon } from '@/components/icons';
 
 export default function Home() {
   return (
-    <div className="space-y-6">
-      <header className="space-y-2">
-        <h1 className="text-3xl font-bold">Experiment Doctor</h1>
-        <p className="text-slate-700">
+    <div className="space-y-10">
+      <header className="max-w-3xl space-y-4">
+        <h1 className="font-display text-4xl font-semibold tracking-tight sm:text-5xl">
+          Find the bugs that silently drop your experiment events
+        </h1>
+        <p className="max-w-[65ch] text-lg text-muted">
           Flagsmith experiments lose events silently: the SDKs skip bad events instead of throwing. Paste your code to find
           the setup bugs before they cost you your results.
         </p>
-        <p className="text-sm text-slate-500">
-          This page is itself an A/B test run with Flagsmith Experimentation.{' '}
-          <Link className="underline" href="/results">
-            See the experiment in the open
-          </Link>
-          .
+        <p className="flex items-start gap-2.5 rounded-xl bg-ember-50 px-4 py-3 text-ink">
+          <FlaskIcon className="mt-0.5 size-5 shrink-0 text-ember-700" />
+          <span>
+            This page is itself an A/B test run with Flagsmith Experimentation.{' '}
+            <Link className="inline-flex items-center gap-1 font-medium text-ember-800 underline hover:text-ember-700" href="/results">
+              See the experiment in the open
+              <ArrowRightIcon className="size-4" />
+            </Link>
+          </span>
         </p>
       </header>
       <DoctorApp />

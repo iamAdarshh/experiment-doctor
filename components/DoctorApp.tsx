@@ -4,15 +4,17 @@
 // Order matters on the enrolling scan: the exposure (getExperimentFlag) is recorded before any conversion
 // event is sent, because conversions only count after the first exposure.
 
-import { useEffect, useState } from 'react';
-import { certainIssues, runChecks, splitMetricNames, type DoctorInput, type DoctorResult } from '@/lib/doctor';
+import { useEffect, useRef, useState } from 'react';
+import { certainIssues, runChecks, splitMetricNames, type DoctorInput, type DoctorResult, type Issue } from '@/lib/doctor';
 import { BROKEN_EXAMPLE } from '@/lib/example';
 import { enrollAndGetPresentation, sendPatchCopied, sendScanEvents, type Presentation } from '@/lib/experiment';
+import { describeLocation, orderForDisplay, summarize } from '@/lib/present';
 import { resultId } from '@/lib/result-id';
 import { NEW_SESSION, recordScan, type ScanSession } from '@/lib/scan-session';
 import { CodeInput, type CodeInputValue } from './CodeInput';
 import { IssueList } from './IssueList';
 import { PatchList } from './PatchList';
+import { ResultView } from './ResultView';
 
 const SESSION_KEY = 'experiment-doctor:scan-session';
 const EMPTY: CodeInputValue = { code: '', dependencies: '', metricNames: '', flagJson: '' };
@@ -49,87 +51,132 @@ function toDoctorInput(value: CodeInputValue): DoctorInput {
   };
 }
 
+function hasOptionalInput(value: CodeInputValue): boolean {
+  return value.dependencies.trim() !== '' || value.metricNames.trim() !== '' || value.flagJson.trim() !== '';
+}
+
+type Scanned = { result: DoctorResult; code: string; id: string; previousCertain: number | null; scanNumber: number };
+
 export function DoctorApp() {
   const [value, setValue] = useState<CodeInputValue>(EMPTY);
-  const [result, setResult] = useState<DoctorResult | null>(null);
-  const [id, setId] = useState<string>('');
+  const [scanned, setScanned] = useState<Scanned | null>(null);
   const [presentation, setPresentation] = useState<Presentation | null>(null);
   const [session, setSession] = useState<ScanSession>(NEW_SESSION);
+  const [busy, setBusy] = useState(false);
+  const [codeError, setCodeError] = useState<string | null>(null);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [beforeExample, setBeforeExample] = useState<CodeInputValue | null>(null);
+
+  const scanning = useRef(false); // blocks a second scan while one is running (a double click)
+  const codeRef = useRef<HTMLTextAreaElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => setSession(loadSession()), []);
 
-  async function scan() {
-    const input = toDoctorInput(value);
-    const next = runChecks(input);
-    const outcome = recordScan(session, certainIssues(next).length, Date.now());
+  // After each scan, move focus to the result headline (screen readers announce it) and bring it into view.
+  useEffect(() => {
+    if (!scanned) return;
+    const heading = headingRef.current;
+    if (!heading) return;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    heading.focus({ preventScroll: true });
+    heading.closest('section')?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+  }, [scanned?.scanNumber]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Ask for the arm on the enrolling scan, and again after a page refresh: the session (enrolled) survives
-    // in sessionStorage but the arm does not, and without this an enrolled variant visitor would see control.
-    // getExperimentFlag returns the same variant for the same identity, so asking twice is safe.
-    if (outcome.session.enrolled && presentation === null) {
-      const arm = process.env.NEXT_PUBLIC_FLAGSMITH_ENV_ID ? await enrollAndGetPresentation() : previewArm();
-      setPresentation(arm);
-    }
-    setResult(next);
-    setSession(outcome.session);
-    saveSession(outcome.session);
-    setId(await resultId(input));
-    await sendScanEvents(outcome.events);
+  function change(next: CodeInputValue) {
+    setValue(next);
+    setBeforeExample(null);
+    if (codeError && next.code.trim() !== '') setCodeError(null);
   }
 
-  const certainCount = result ? certainIssues(result).length : 0;
-  const possibleCount = result ? result.issues.length - certainCount : 0;
+  function loadExample() {
+    const hasInput = value.code.trim() !== '' || hasOptionalInput(value);
+    setBeforeExample(hasInput ? value : null); // offer undo only when something would be lost
+    setValue(BROKEN_EXAMPLE);
+    setMoreOpen(true);
+    setCodeError(null);
+  }
+
+  function undoExample() {
+    if (!beforeExample) return;
+    setValue(beforeExample);
+    setMoreOpen(hasOptionalInput(beforeExample));
+    setBeforeExample(null);
+  }
+
+  async function scan() {
+    if (scanning.current) return;
+    if (value.code.trim() === '') {
+      setCodeError('Paste your Flagsmith code first. The other boxes are optional.');
+      codeRef.current?.focus();
+      return;
+    }
+    scanning.current = true;
+    setBusy(true);
+    try {
+      const input = toDoctorInput(value);
+      const next = runChecks(input);
+      const outcome = recordScan(session, certainIssues(next).length, Date.now());
+
+      // Ask for the arm on the enrolling scan, and again after a page refresh: the session (enrolled) survives
+      // in sessionStorage but the arm does not, and without this an enrolled variant visitor would see control.
+      // getExperimentFlag returns the same variant for the same identity, so asking twice is safe.
+      if (outcome.session.enrolled && presentation === null) {
+        const arm = process.env.NEXT_PUBLIC_FLAGSMITH_ENV_ID ? await enrollAndGetPresentation() : previewArm();
+        setPresentation(arm);
+      }
+      const id = await resultId(input);
+      setScanned((previous) => ({
+        result: next,
+        code: value.code,
+        id,
+        previousCertain: previous ? certainIssues(previous.result).length : null,
+        scanNumber: (previous?.scanNumber ?? 0) + 1,
+      }));
+      setSession(outcome.session);
+      saveSession(outcome.session);
+      setBeforeExample(null);
+      await sendScanEvents(outcome.events);
+    } finally {
+      scanning.current = false;
+      setBusy(false);
+    }
+  }
+
+  const locate = (issue: Issue) => describeLocation(scanned?.code ?? '', issue);
+  const issues = scanned ? orderForDisplay(scanned.result.issues) : [];
 
   return (
-    <div className="space-y-8">
-      <CodeInput value={value} onChange={setValue} onScan={() => void scan()} onLoadExample={() => setValue(BROKEN_EXAMPLE)} />
+    <div className="space-y-12">
+      <CodeInput
+        value={value}
+        onChange={change}
+        onScan={() => void scan()}
+        onLoadExample={loadExample}
+        onUndoExample={beforeExample ? undoExample : null}
+        moreOpen={moreOpen}
+        onMoreOpenChange={setMoreOpen}
+        busy={busy}
+        codeError={codeError}
+        codeRef={codeRef}
+      />
 
-      {result && (
-        <section className="space-y-4">
-          <h2 className="text-xl font-semibold">
-            {certainCount === 0 ? 'No blocking issues found' : `${certainCount} issue${certainCount === 1 ? '' : 's'} will lose experiment events`}
-            {possibleCount > 0 && `${certainCount === 0 ? ', but' : ','} ${possibleCount} more might`}
-          </h2>
-
-          {result.issues.length > 0 &&
-            (presentation === 'patch' ? (
-              <PatchList issues={result.issues} onCopy={() => void sendPatchCopied()} />
+      {scanned && (
+        <ResultView
+          key={scanned.scanNumber}
+          result={scanned.result}
+          summary={summarize(scanned.result)}
+          resultId={scanned.id}
+          previousCertain={scanned.previousCertain}
+          headingRef={headingRef}
+          issueList={
+            presentation === 'patch' ? (
+              <PatchList issues={issues} locate={locate} onCopy={() => void sendPatchCopied()} />
             ) : (
-              <IssueList issues={result.issues} />
-            ))}
-
-          {result.parseErrors.length > 0 && (
-            <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm">
-              <div className="font-medium">Could not read part of the input</div>
-              <ul className="mt-1 list-disc pl-5">
-                {result.parseErrors.map((error, index) => (
-                  <li key={index}>
-                    {error.source} line {error.line}: {error.message}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {result.notChecked.length > 0 && (
-            <details className="rounded-md border border-slate-200 bg-slate-50 p-4 text-sm">
-              <summary className="cursor-pointer font-medium">
-                {result.notChecked.length} check{result.notChecked.length === 1 ? '' : 's'} not run, so this is not a full all-clear
-              </summary>
-              <ul className="mt-2 list-disc pl-5">
-                {result.notChecked.map((item) => (
-                  <li key={item.ruleId}>
-                    <code>{item.ruleId}</code>: {item.reason}
-                  </li>
-                ))}
-              </ul>
-            </details>
-          )}
-
-          <p className="text-xs text-slate-500">
-            Result ID <code>{id}</code> · engine {result.engineVersion}. The same ID always means the same output.
-          </p>
-        </section>
+              <IssueList issues={issues} locate={locate} />
+            )
+          }
+        />
       )}
     </div>
   );

@@ -1,18 +1,14 @@
 // Control arm (`issues`): what is wrong, where, and the Flagsmith docs page that explains it.
 import type { Issue } from '@/lib/doctor';
-import { IssueHeader } from './IssueBadge';
+import { DocsLink, IssueCard } from './IssueCard';
 
-export function IssueList({ issues }: { issues: Issue[] }) {
+type Props = { issues: Issue[]; locate: (issue: Issue) => string };
+
+export function IssueList({ issues, locate }: Props) {
   return (
     <ol className="space-y-3">
       {issues.map((issue, index) => (
-        <li key={index} className="rounded-md border border-slate-200 bg-white p-4">
-          <IssueHeader issue={issue} />
-          <p className="mt-2">{issue.message}</p>
-          <a className="mt-1 inline-block text-sm text-indigo-700 underline" href={issue.docsUrl} target="_blank" rel="noreferrer">
-            Read the Flagsmith docs
-          </a>
-        </li>
+        <IssueCard key={index} issue={issue} location={locate(issue)} action={<DocsLink issue={issue} />} />
       ))}
     </ol>
   );
