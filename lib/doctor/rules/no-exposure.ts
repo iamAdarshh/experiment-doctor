@@ -31,7 +31,8 @@ export const rule: Rule = {
       const call = code.calls.find((candidate) => candidate.start === read.start && candidate.receiver);
       if (call && (read.via === 'getValue' || read.via === 'hasFeature')) {
         const field = read.via === 'getValue' ? 'value' : 'enabled';
-        patch = replaceRangePatch(input.code, read.start, read.end, `${call.receiver}.getExperimentFlag('${read.flag}')?.${field}`);
+        const flagCode = read.flagConstant ?? `'${read.flag}'`; // keep the team's constant when they used one
+        patch = replaceRangePatch(input.code, read.start, read.end, `${call.receiver}.getExperimentFlag(${flagCode})?.${field}`);
       }
       issues.push({
         ruleId: 'no-exposure',

@@ -26,8 +26,11 @@ export type CallFact = Pos & {
   /** True when the receiver looks like a Flagsmith client (see isFlagsmithReceiver). */
   onFlagsmith: boolean;
   args: t.Node[];
-  /** The first argument when it is a plain string, for example the event name. */
+  /** The first argument when it is a plain string or a top-level string constant, for example the event name. */
   firstString?: string;
+  /** The string literal that holds `firstString`: the argument itself, or the constant's value when the argument
+   *  is a constant (`const EVENT = 'purchase'`). Rules point at it and patch it. */
+  firstStringNode?: t.Node;
   /** Start offset of the enclosing function, or -1 at the top level. Used to compare order inside one function. */
   scopeId: number;
   statement?: StatementInfo;
@@ -60,6 +63,8 @@ export type ConfigFact = Pos & {
 /** A flag read that does not record an exposure, for example `flagsmith.getValue('x')`. */
 export type FlagReadFact = Pos & {
   flag: string;
+  /** The argument as written when it is a constant, for example `FLAG_NAME`, so a patch can keep using it. */
+  flagConstant?: string;
   /** How it was read, for the message: getValue, hasFeature, getAllFlags, useFlags, getFeatureValue... */
   via: string;
   runtime?: Runtime;
@@ -245,6 +250,8 @@ class FactCollector {
   private calls: CallFact[] = [];
   private configs: ConfigFact[] = [];
   private flagReads: FlagReadFact[] = [];
+  /** Top-level `const NAME = 'text'` in any pasted file. null = declared more than once with different text. */
+  private constStrings = new Map<string, t.Node | null>();
   private looksLikeServer = false;
   private programs: { program: t.Program; isModule: boolean }[] = [];
 
@@ -256,7 +263,45 @@ class FactCollector {
         statement.type === 'ExportDefaultDeclaration',
     );
     this.programs.push({ program, isModule });
+    this.findStringConstants(program);
     this.findBindings(program);
+  }
+
+  // ---- pass 1: bindings -------------------------------------------------------------------------
+
+  /**
+   * Teams often keep flag and event names in constants: `const FLAG = 'checkout_button'`. Only top-level
+   * `const` declarations count (they can't be reassigned or differ per call). A name declared twice with
+   * different text is ambiguous and is not resolved.
+   */
+  private findStringConstants(program: t.Program) {
+    for (const statement of program.body) {
+      const declaration = statement.type === 'ExportNamedDeclaration' ? statement.declaration : statement;
+      if (declaration?.type !== 'VariableDeclaration' || declaration.kind !== 'const') continue;
+      for (const declarator of declaration.declarations) {
+        if (declarator.id.type !== 'Identifier' || !declarator.init) continue;
+        let init: t.Node = declarator.init;
+        if (init.type === 'TSAsExpression' || init.type === 'TSSatisfiesExpression') init = init.expression;
+        const text = stringValue(init);
+        if (text === undefined) continue;
+        const name = declarator.id.name;
+        const known = this.constStrings.get(name);
+        if (known === undefined) this.constStrings.set(name, init);
+        else if (known !== null && stringValue(known) !== text) this.constStrings.set(name, null);
+      }
+    }
+  }
+
+  /** The string literal behind an argument: the literal itself, or a top-level constant's value. */
+  private stringNode(node: t.Node | undefined | null): t.Node | undefined {
+    if (!node) return undefined;
+    if (stringValue(node) !== undefined) return node;
+    if (node.type === 'Identifier') return this.constStrings.get(node.name) ?? undefined;
+    return undefined;
+  }
+
+  private resolvedString(node: t.Node | undefined | null): string | undefined {
+    return stringValue(this.stringNode(node));
   }
 
   finish(): CodeFacts {
@@ -273,8 +318,6 @@ class FactCollector {
       looksLikeServer: this.looksLikeServer,
     };
   }
-
-  // ---- pass 1: bindings -------------------------------------------------------------------------
 
   private findBindings(root: t.Node) {
     this.visitAll(root, (node) => {
@@ -394,17 +437,21 @@ class FactCollector {
           : false;
 
     // Flag reads that do not record an exposure.
-    const flagArg = stringValue(node.arguments[0] as t.Node | undefined);
+    const firstArg = node.arguments[0] as t.Node | undefined;
+    const flagNode = this.stringNode(firstArg);
+    const flagArg = stringValue(flagNode);
+    const flagConstant = firstArg?.type === 'Identifier' && flagArg !== undefined ? firstArg.name : undefined;
     if (onFlagsmith && flagArg && (name === 'getValue' || name === 'hasFeature')) {
-      this.flagReads.push({ ...posOf(node), flag: flagArg, via: name, runtime: this.runtimeOf(receiver) });
+      this.flagReads.push({ ...posOf(node), flag: flagArg, flagConstant, via: name, runtime: this.runtimeOf(receiver) });
     }
     if (flagArg && (name === 'getFeatureValue' || name === 'isFeatureEnabled' || name === 'getFlag') && (this.importedNodeSdk || this.importedFlagsmith || receiver === 'flags')) {
-      this.flagReads.push({ ...posOf(node), flag: flagArg, via: name, runtime: 'node' });
+      this.flagReads.push({ ...posOf(node), flag: flagArg, flagConstant, via: name, runtime: 'node' });
     }
     if (onFlagsmith && name === 'useFlags' && node.arguments[0]?.type === 'ArrayExpression') {
       for (const element of node.arguments[0].elements) {
-        const flag = stringValue(element ?? undefined);
-        if (flag && element) this.flagReads.push({ ...posOf(element), flag, via: 'useFlags', runtime: 'browser' });
+        const flag = this.resolvedString(element);
+        const flagConstant = element?.type === 'Identifier' && flag !== undefined ? element.name : undefined;
+        if (flag && element) this.flagReads.push({ ...posOf(element), flag, flagConstant, via: 'useFlags', runtime: 'browser' });
       }
     }
 
@@ -424,6 +471,7 @@ class FactCollector {
       onFlagsmith,
       args: node.arguments as t.Node[],
       firstString: flagArg,
+      firstStringNode: flagNode,
       scopeId: state.scopeId,
       statement: state.statement,
       canAwait: state.isAsync,
