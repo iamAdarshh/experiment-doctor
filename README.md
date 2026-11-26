@@ -179,3 +179,8 @@ Flagsmith receives a random visitor ID, the flag read and the experiment events 
 
 Adarsh (doctor engine, rules, CLI/agent tool, Flagsmith client code) and Anmol (Flagsmith org setup, mock
 Flagsmith server and checker, agent runner, UI, outreach, video). Each reviews the other's PRs.
+
+## License
+
+[MIT](LICENSE). The third-party projects in [`tests/real-world/projects/`](tests/real-world/) keep their own licences,
+in a `LICENSE` file next to each project's code.
