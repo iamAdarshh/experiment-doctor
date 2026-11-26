@@ -13,11 +13,11 @@ export default function Home() {
           Flagsmith experiments lose events silently: the SDKs skip bad events instead of throwing. Paste your code to find
           the setup bugs before they cost you your results.
         </p>
-        <p className="flex items-start gap-2.5 rounded-xl bg-ember-50 px-4 py-3 text-ink">
-          <FlaskIcon className="mt-0.5 size-5 shrink-0 text-ember-700" />
+        <p className="flex items-start gap-2.5 text-muted">
+          <FlaskIcon className="mt-0.5 size-5 shrink-0 text-ink" />
           <span>
             This page is itself an A/B test run with Flagsmith Experimentation.{' '}
-            <Link className="inline-flex items-center gap-1 font-medium text-ember-800 underline hover:text-ember-700" href="/results">
+            <Link className="inline-flex items-center gap-1 font-semibold text-ink underline decoration-ink/40 hover:decoration-ink" href="/results">
               See the experiment in the open
               <ArrowRightIcon className="size-4" />
             </Link>

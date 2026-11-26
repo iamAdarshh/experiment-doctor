@@ -17,7 +17,7 @@ type Props = { issue: Issue; location: string; action: ReactNode };
 export function IssueCard({ issue, location, action }: Props) {
   const confidence = CONFIDENCE[issue.confidence];
   return (
-    <li className="rounded-2xl border border-line bg-white p-5 shadow-[0_1px_2px_rgb(43_36_32/0.04),0_4px_12px_-6px_rgb(43_36_32/0.08)]">
+    <li className="rounded-2xl border border-line bg-white p-5 shadow-[0_1px_2px_rgb(17_18_20/0.04),0_4px_12px_-6px_rgb(17_18_20/0.08)]">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm">
         <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-semibold ${confidence.className}`}>
           {issue.confidence === 'certain' && <AlertIcon className="size-3.5" />}
@@ -36,7 +36,7 @@ export function IssueCard({ issue, location, action }: Props) {
 export function DocsLink({ issue }: { issue: Issue }) {
   return (
     <a
-      className="text-sm font-medium text-ember-800 underline hover:text-ember-700"
+      className="text-sm font-medium text-ink underline decoration-ink/40 hover:decoration-ink"
       href={issue.docsUrl}
       target="_blank"
       rel="noreferrer"

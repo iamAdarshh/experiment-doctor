@@ -22,7 +22,7 @@ type Props = {
 };
 
 const boxClass =
-  'block w-full resize-y rounded-xl border border-line bg-white p-3.5 font-mono text-[13px] leading-relaxed text-ink placeholder:text-muted transition-colors hover:border-[#d6c9bc] focus:border-ember-600 focus:outline-2 focus:outline-offset-0 focus:outline-ember-600/25';
+  'block w-full resize-y rounded-xl border border-line bg-white p-3.5 font-mono text-[13px] leading-relaxed text-ink placeholder:text-muted transition-colors hover:border-line-strong focus:border-ink focus:outline-2 focus:outline-offset-0 focus:outline-ink/15';
 
 const OPTIONAL_BOXES = [
   {
@@ -64,7 +64,7 @@ export function CodeInput(props: Props) {
         Your code
       </h2>
       <p className="flex items-center gap-2 text-sm text-muted">
-        <LockIcon className="size-4 shrink-0 text-leaf-700" />
+        <LockIcon className="size-4 shrink-0 text-ink" />
         Your code never leaves your browser. All checks run locally; nothing you paste is sent anywhere.
       </p>
 
@@ -73,7 +73,7 @@ export function CodeInput(props: Props) {
           Flagsmith code <span className="font-normal text-muted">(JavaScript or TypeScript)</span>
         </label>
         <p id="code-hint" className="text-sm text-muted">
-          Several files? Start each one with a line <code className="rounded bg-sand px-1.5 py-0.5 font-mono text-[13px] whitespace-nowrap text-ink">{'// @file path'}</code>
+          Several files? Start each one with a line <code className="rounded bg-surface px-1.5 py-0.5 font-mono text-[13px] whitespace-nowrap text-ink">{'// @file path'}</code>
         </p>
         <textarea
           id="code"
@@ -93,7 +93,7 @@ export function CodeInput(props: Props) {
       </div>
 
       <details
-        className="group rounded-xl border border-line bg-sand/60"
+        className="group rounded-xl border border-line bg-surface"
         open={props.moreOpen}
         onToggle={(event) => props.onMoreOpenChange(event.currentTarget.open)}
       >
@@ -135,21 +135,21 @@ export function CodeInput(props: Props) {
           onClick={onScan}
           disabled={busy}
           aria-busy={busy || undefined}
-          className="inline-flex min-h-11 items-center gap-2 rounded-full bg-ember-600 px-6 font-semibold text-white shadow-[0_1px_2px_rgb(124_45_18/0.25)] transition-colors hover:bg-ember-700 disabled:cursor-wait disabled:opacity-70"
+          className="inline-flex min-h-11 items-center gap-2 rounded-full bg-ink px-6 font-semibold text-white transition-colors hover:bg-ink-soft disabled:cursor-wait disabled:opacity-70"
         >
           {busy ? 'Scanning…' : 'Scan'}
         </button>
         <button
           type="button"
           onClick={props.onLoadExample}
-          className="inline-flex min-h-11 items-center rounded-full px-4 font-medium text-ember-800 underline decoration-ember-800/30 hover:decoration-ember-800"
+          className="inline-flex min-h-11 items-center rounded-full px-4 font-medium text-ink underline decoration-ink/30 hover:decoration-ink"
         >
           Load a broken example
         </button>
         {props.onUndoExample && (
           <span role="status" className="text-sm text-muted">
             Example loaded.{' '}
-            <button type="button" onClick={props.onUndoExample} className="font-medium text-ember-800 underline">
+            <button type="button" onClick={props.onUndoExample} className="font-medium text-ink underline">
               Undo
             </button>
           </span>
