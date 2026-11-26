@@ -8,9 +8,9 @@ before they cost you your results. It runs entirely in your browser: pasted code
 Built for **Toggle Wars** (WeMakeDevs x Flagsmith), Track 01 "Test Something Real". The tool itself is
 A/B tested with Flagsmith Experimentation (see [How we use Flagsmith](#how-we-use-flagsmith)).
 
-- Live site: _TODO: Vercel URL_
+- Live site: https://experiment-doctor.vercel.app
 - Demo video: _TODO_
-- Public results page: `/results` on the live site
+- Public results page: https://experiment-doctor.vercel.app/results
 
 ## What it checks
 
@@ -42,7 +42,7 @@ We run **two experiments on one flag**, `fix_presentation`:
 | Arm | Flag value | What the visitor (or agent) sees |
 | --- | --- | --- |
 | Control | `issues` | An issue list with links to the Flagsmith docs |
-| Variant | key `patch` | The same issues, each with a ready-made fix and a copy button |
+| Variant | key `patch` | The same issues; where an issue has a fix, a ready-made fix and a copy button replace the docs link |
 
 **Question:** does a ready-made fix, instead of a diagnosis, help people (and coding agents) reach a clean setup more often?
 
@@ -120,7 +120,7 @@ npx tsx scripts/agents/doctor-tool.ts <workspace> <issues|patch>   # the agent e
 
 ```
 Browser
-  Paste boxes -> runChecks() in lib/doctor (pure, local) -> IssueList (control) | PatchList (variant)
+  Paste boxes -> runChecks() in lib/doctor (pure, local) -> IssueCard list: docs link (control) | fix (variant)
   Flagsmith JS SDK: identify, getExperimentFlag (exposure), trackEvent (conversions)
 Vercel (Next.js 15)
   /results page + /api/results -> Flagsmith Admin API (admin token, server only, 5 min cache)
@@ -136,7 +136,8 @@ Vercel (Next.js 15)
 | `lib/scan-session.ts` | Pure rules for when experiment events fire (unit-tested). |
 | `lib/experiment.ts` | All browser Flagsmith calls. |
 | `lib/server/experiment-results.ts` | Admin API read for the results page (server only). |
-| `components/` | Input boxes, `IssueList`, `PatchList`, the page logic. |
+| `lib/present.ts` | Headline wording, display order and file-aware locations for results (unit-tested). |
+| `components/` | Input boxes, the shared `IssueCard` (the arms differ only in its action slot), `IssueList`, `PatchList`, the page logic. |
 | `scripts/` | CLI, self-check, agent doctor tool. |
 
 ### Deterministic output
