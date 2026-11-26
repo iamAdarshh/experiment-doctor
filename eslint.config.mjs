@@ -6,7 +6,7 @@ const compat = new FlatCompat({ baseDirectory: dirname(fileURLToPath(import.meta
 
 const config = [
   // Fixtures and corpus files are sample user code (often deliberately broken), not our code.
-  { ignores: ['.next/**', 'node_modules/**', 'lib/doctor/fixtures/**', 'tests/corpus/**', 'next-env.d.ts'] },
+  { ignores: ['.next/**', 'node_modules/**', '.claude/**', 'lib/doctor/fixtures/**', 'tests/corpus/**', 'next-env.d.ts'] },
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
   {
     // The doctor engine must stay pure (docs/07-determinism.md). Lint blocks the obvious leaks.
