@@ -167,7 +167,8 @@ scans, `rescan_clean` would partly measure noise.
 
 **Tested on real code.** On 26 Nov we ran the doctor on 209 public projects: 77 with Flagsmith experiment code
 (mostly other Toggle Wars teams), 110 production apps that use Flagsmith feature flags, and 22 of Flagsmith's own
-examples. Every false positive and parse failure it found was fixed (engine 0.1.2). The files from repos whose licence
+examples. Every false positive and parse failure it found was fixed (engine 0.1.2), and an old SDK in an app that runs
+no experiment is now a heads-up instead of a certain issue (engine 0.1.3). The files from repos whose licence
 allows it are in [`tests/real-world/`](tests/real-world/); `npm run real-world` re-runs them.
 
 ## Privacy

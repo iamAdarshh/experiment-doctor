@@ -3,7 +3,7 @@
 // eslint.config.mjs enforces the obvious ones).
 
 import { normalizeInput } from './normalize';
-import { analyzeCode, type CodeAnalysis } from './parse';
+import { analyzeCode, type CodeAnalysis, type CodeFacts } from './parse';
 import { RULES } from './rules';
 import { readFlagJson } from './flag-json';
 import { RULE_ORDER, type DoctorInput, type DoctorResult, type InputBox, type Issue, type NotChecked, type ParseError } from './types';
@@ -32,6 +32,8 @@ export function compareIssues(a: Issue, b: Issue): number {
   if (byColumn !== 0) return byColumn;
   return a.message < b.message ? -1 : a.message > b.message ? 1 : 0;
 }
+
+const NO_CODE: CodeFacts = { calls: [], configs: [], flagReads: [], usesFlagsmith: false, looksLikeServer: false };
 
 export function runChecks(rawInput: DoctorInput): DoctorResult {
   const input = normalizeInput(rawInput);
@@ -68,10 +70,13 @@ export function runChecks(rawInput: DoctorInput): DoctorResult {
       }
       facts = analysis.facts;
     }
+    // Rules that don't need code still get the parsed code when there is some (sdk-too-old uses it to tell
+    // whether the code runs an experiment). With no code or a parse error they get an empty fact list.
+    const parsed = analysis && analysis.ok ? analysis.facts : null;
     const outcome = rule.check({
       input,
-      // Rules that don't need code never read it; give them an empty fact list rather than null.
-      code: facts ?? { calls: [], configs: [], flagReads: [], usesFlagsmith: false, looksLikeServer: false },
+      code: facts ?? parsed ?? NO_CODE,
+      codeParsed: parsed !== null,
     });
     if (Array.isArray(outcome)) issues.push(...outcome);
     else notChecked.push({ ruleId, reason: outcome.notChecked });

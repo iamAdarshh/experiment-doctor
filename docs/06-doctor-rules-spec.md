@@ -41,7 +41,7 @@ Hashing uses Web Crypto, which is async; keep `runChecks` sync and pure, and com
 | 2 | `event-metric-mismatch` | `trackEvent('X')` name not in metric list (case-sensitive); suggest nearest by Levenshtein | code + metricNames | certain | rename to closest | Day 1 |
 | 3 | `variation-key` | variation without key, or key `control` (reserved) | flagJson | certain | `flagsmith feature variant add ... --key <k>` | Day 1 |
 | 4 | `no-flush` | browser/SSR code with events but no `flushEvents()`; Node without `close()`; Python script without flush/`max_buffer_items=1` | code | possible (browser), certain (Node script) | flush on `pagehide` / before response / `close()` | Day 1 |
-| 5 | `sdk-too-old` | versions below table minimums; `flagsmith-nodejs` package | dependencies | certain | version bump | Day 1 |
+| 5 | `sdk-too-old` | versions below table minimums; `flagsmith-nodejs` package | dependencies | certain; possible (heads-up) when the parsed code has no experiment calls or `enableEvents` | version bump | Day 1 |
 | 6 | `no-exposure` | experiment flag read via `getAllFlags`/`getValue`/`getFlags` with no `trackExposureEvent` for it | code | possible | use `getExperimentFlag` | Day 2 |
 | 7 | `no-identity` | events/experiment flags with no `identify()` | code | certain | identify first | Day 2 |
 | 8 | `identity-mismatch` | inside one function, the exposure (`identify()`, Node `getExperimentFlag`, `trackExposureEvent`) and the conversion (`trackEvent` identifier) use different identity expressions | code | possible | one shared id | Day 2 |
