@@ -29,6 +29,7 @@ section and report only real findings, most severe first, with file:line.
 - [ ] If required input is missing (e.g. metric names), the rule reports "not checked", never a pass.
 - [ ] Docs link points to the exact Flagsmith docs page for the problem.
 - [ ] False-positive corpus still produces zero issues.
+- [ ] `npm run real-world`: no new parse errors or new `certain` issues in `tests/real-world/REPORT.md` (commit the updated report).
 
 ## 4. Privacy and security
 - [ ] Pasted code is never sent anywhere (check new fetch calls, analytics, error reporting).

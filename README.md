@@ -27,12 +27,13 @@ Checks that need a box you left empty are listed as **not checked**, so a clean 
 | 5 | `sdk-too-old` | SDKs below the minimum for events (JS 12.4.0, Node 9.1.0, Python 6.3.0, Go v5.3.0, Java 8.2.0) | certain / possible for ranges |
 | 6 | `no-exposure` | The experiment flag read with `getValue` / `getAllFlags` / `useFlags`, so no exposure is recorded | possible |
 | 7 | `no-identity` | Experiment calls with no `identify()` (unidentified users are skipped) | certain / possible |
-| 8 | `identity-mismatch` | Exposure and conversion use different identity expressions | possible |
+| 8 | `identity-mismatch` | An exposure and a conversion in the same function use different identity expressions | possible |
 | 9 | `conversion-before-exposure` | `trackEvent` before the flag read in the same function | possible |
 | 10 | `selfhosted-events-url` | `eventsApiUrl` ending in `/v1/events`, or a self-hosted API with no events URL | certain |
 | 11 | `analytics-vs-events` | `enableAnalytics` mistaken for events; `eventProcessorConfig` without `enableEvents` (init throws) | certain |
 
-Only **certain** issues block a clean result. Code checks read JavaScript and TypeScript (with a real parser);
+Only **certain** issues block a clean result. Code checks read JavaScript and TypeScript (with a real parser,
+including several pasted files, flag and event names kept in constants, and the SDK loaded from a `<script>` tag);
 dependency checks also read `requirements.txt`, `pyproject.toml`, `go.mod`, `pom.xml` and `build.gradle`.
 
 ## How we use Flagsmith
@@ -113,6 +114,7 @@ npm test                 # all tests
 npm run lint && npm run typecheck
 npm run doctor:self      # the doctor on our own Flagsmith code
 npm run doctor -- <project folder> [--format issues|patch|json] [--metrics a,b] [--flag-json file]
+npm run real-world      # the doctor on 91 real public projects (add -- --fetch for all 209)
 npx tsx scripts/agents/doctor-tool.ts <workspace> <issues|patch>   # the agent experiment's tool
 ```
 
@@ -129,7 +131,7 @@ Vercel (Next.js 15)
 | Path | What |
 | --- | --- |
 | `lib/doctor/` | The engine. `runChecks(input): DoctorResult`. No React, Flagsmith, clock, randomness, network or storage (enforced by lint). |
-| `lib/doctor/parse.ts` | `@babel/parser` (TypeScript + JSX) turns code into a short list of facts: Flagsmith calls, SDK options, plain flag reads. |
+| `lib/doctor/parse.ts` | `@babel/parser` (TypeScript, JSX, decorators) turns code into a short list of facts: Flagsmith calls, SDK options, plain flag reads. Resolves top-level string constants and keeps each pasted file's clients apart. |
 | `lib/doctor/rules/` | One file per check. Each returns issues, or says why it couldn't decide. |
 | `lib/doctor/fixtures/<rule>/` | `broken.*` (one bug), `fixed.*`, `context.json`, reviewed `expected.json`. |
 | `lib/doctor/format.ts` | Text output in the two arms' formats (CLI and agent tool). |
@@ -138,7 +140,8 @@ Vercel (Next.js 15)
 | `lib/server/experiment-results.ts` | Admin API read for the results page (server only). |
 | `lib/present.ts` | Headline wording, display order and file-aware locations for results (unit-tested). |
 | `components/` | Input boxes, the shared `IssueCard` (the arms differ in its action slot), `IssueList`, `PatchList` (adds "Copy all fixed code"), the page logic. |
-| `scripts/` | CLI, self-check, agent doctor tool. |
+| `scripts/` | CLI, self-check, agent doctor tool, real-world run. |
+| `tests/real-world/` | 209 public projects the doctor is run against ([README](tests/real-world/README.md), [report](tests/real-world/REPORT.md)). |
 
 ### Deterministic output
 
@@ -159,7 +162,13 @@ scans, `rescan_clean` would partly measure noise.
 - Determinism: run twice, reordered boxes, CRLF, BOM and trailing spaces, plus `fast-check` properties
   (appended comments, unrelated code at the top, arbitrary text never throws).
 - False-positive corpus (`tests/corpus/`): correct Flagsmith code must give zero issues.
+- Real-world shapes (`tests/engine/real-world.test.ts`): code patterns from public projects that once broke the parser or a rule.
 - Scan-session rules for enrolment and events.
+
+**Tested on real code.** On 26 Nov we ran the doctor on 209 public projects: 77 with Flagsmith experiment code
+(mostly other Toggle Wars teams), 110 production apps that use Flagsmith feature flags, and 22 of Flagsmith's own
+examples. Every false positive and parse failure it found was fixed (engine 0.1.2). The files from repos whose licence
+allows it are in [`tests/real-world/`](tests/real-world/); `npm run real-world` re-runs them.
 
 ## Privacy
 

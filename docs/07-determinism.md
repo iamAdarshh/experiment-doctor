@@ -17,6 +17,8 @@ if output varied between scans, `rescan_clean` would partly measure noise.
 3. Determinism: run each fixture twice, with shuffled input box order and CRLF, compare byte-for-byte;
    plus `fast-check` property tests (whitespace, comment insertion, unrelated code).
 4. False-positive corpus: correct Flagsmith snippets from docs/example repos must produce zero issues.
+   Real-world run (`npm run real-world`, not in CI): 209 public projects; engine changes must not add parse errors
+   or false `certain` issues there.
 5. Confidence labels: `certain` (exact match) vs `possible` (heuristic). Only `certain` blocks a clean result.
 6. Parse failures are reported with a line, and affected rules listed as "not checked". Never a silent all-clear.
 7. `ENGINE_VERSION` sent as event metadata, so engine changes are visible in experiment data.
