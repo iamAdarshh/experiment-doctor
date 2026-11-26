@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { runChecks, type DoctorResult, type Issue } from '@/lib/doctor';
 import { BROKEN_EXAMPLE } from '@/lib/example';
-import { describeLocation, headline, orderForDisplay, summarize } from '@/lib/present';
+import { applyCodeFixes, describeLocation, headline, orderForDisplay, summarize } from '@/lib/present';
 
 function issue(confidence: Issue['confidence'], ruleId: Issue['ruleId'], line?: number): Issue {
   return { ruleId, confidence, source: 'code', line, message: '', docsUrl: '' };
@@ -64,5 +64,45 @@ describe('describeLocation', () => {
     const code = '// @file src/a.ts\nconst a = 1;\nconst b = 2;\n// @file src/b.ts\nconst c = 3;\n';
     expect(describeLocation(code, issue('certain', 'no-flush', 3))).toBe('src/a.ts line 2');
     expect(describeLocation(code, issue('certain', 'no-flush', 5))).toBe('src/b.ts line 1');
+  });
+});
+
+describe('applyCodeFixes', () => {
+  const exampleInput = { ...BROKEN_EXAMPLE, metricNames: [BROKEN_EXAMPLE.metricNames] };
+
+  it('applies every code fix to the broken example, and the re-scan no longer finds those issues', () => {
+    const before = runChecks(exampleInput);
+    const fixed = applyCodeFixes(exampleInput.code, before.issues);
+    expect(fixed).toMatchObject({ applied: 3, skipped: 0, elsewhere: 1 }); // the old SDK is in the dependency file
+
+    const after = runChecks({ ...exampleInput, code: fixed.text });
+    const codeRulesBefore = before.issues.filter((item) => item.source === 'code').map((item) => item.ruleId);
+    const stillFiring = after.issues.filter((item) => codeRulesBefore.includes(item.ruleId));
+    expect(stillFiring).toEqual([]);
+  });
+
+  it('is the same as applying the fixes one by one when they do not overlap', () => {
+    const code = 'a\nb\nc\nd\n';
+    const issues = [
+      { ...issue('certain', 'no-flush'), patch: { before: 'd', after: 'D' } },
+      { ...issue('certain', 'no-identity'), patch: { before: 'b', after: 'B1\nB2' } },
+    ];
+    expect(applyCodeFixes(code, issues)).toEqual({ text: 'a\nB1\nB2\nc\nD\n', applied: 2, skipped: 0, elsewhere: 0 });
+  });
+
+  it('skips a fix that overlaps another instead of merging them', () => {
+    const issues = [
+      { ...issue('certain', 'no-flush'), patch: { before: 'b\nc', after: 'BC' } },
+      { ...issue('certain', 'no-identity'), patch: { before: 'c\nd', after: 'CD' } },
+    ];
+    expect(applyCodeFixes('a\nb\nc\nd', issues)).toEqual({ text: 'a\nBC\nd', applied: 1, skipped: 1, elsewhere: 0 });
+  });
+
+  it('leaves out command fixes and fixes for other boxes', () => {
+    const issues = [
+      { ...issue('certain', 'sdk-too-old'), source: 'dependencies' as const, patch: { before: 'x', after: 'y' } },
+      { ...issue('certain', 'sdk-too-old'), patch: { command: 'npm i @flagsmith/flagsmith@12.4.0' } },
+    ];
+    expect(applyCodeFixes('x', issues)).toEqual({ text: 'x', applied: 0, skipped: 0, elsewhere: 2 });
   });
 });

@@ -42,7 +42,7 @@ We run **two experiments on one flag**, `fix_presentation`:
 | Arm | Flag value | What the visitor (or agent) sees |
 | --- | --- | --- |
 | Control | `issues` | An issue list with links to the Flagsmith docs |
-| Variant | key `patch` | The same issues; where an issue has a fix, a ready-made fix and a copy button replace the docs link |
+| Variant | key `patch` | The same issues; where an issue has a fix, a ready-made fix and a copy button replace the docs link, plus "Copy all fixed code" when there are two or more code fixes |
 
 **Question:** does a ready-made fix, instead of a diagnosis, help people (and coding agents) reach a clean setup more often?
 
@@ -137,7 +137,7 @@ Vercel (Next.js 15)
 | `lib/experiment.ts` | All browser Flagsmith calls. |
 | `lib/server/experiment-results.ts` | Admin API read for the results page (server only). |
 | `lib/present.ts` | Headline wording, display order and file-aware locations for results (unit-tested). |
-| `components/` | Input boxes, the shared `IssueCard` (the arms differ only in its action slot), `IssueList`, `PatchList`, the page logic. |
+| `components/` | Input boxes, the shared `IssueCard` (the arms differ in its action slot), `IssueList`, `PatchList` (adds "Copy all fixed code"), the page logic. |
 | `scripts/` | CLI, self-check, agent doctor tool. |
 
 ### Deterministic output
