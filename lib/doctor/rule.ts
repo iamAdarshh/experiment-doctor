@@ -5,8 +5,11 @@ import type { InputBox, Issue, NormalizedInput, RuleId } from './types';
 
 export type RuleContext = {
   input: NormalizedInput;
-  /** The parsed code. Rules that need code only run when `code.ok` is true (the engine checks this). */
+  /** The parsed code. Rules that need code only run when it parsed and uses Flagsmith (the engine checks this).
+   *  Other rules get it too when it parsed, or an empty fact list when there is no code or it didn't parse. */
   code: Extract<CodeAnalysis, { ok: true }>['facts'];
+  /** True when code was pasted and parsed, so `code` really describes it (and isn't the empty fact list). */
+  codeParsed: boolean;
 };
 
 /** A rule returns its issues, or says it could not decide (never a silent pass). */
