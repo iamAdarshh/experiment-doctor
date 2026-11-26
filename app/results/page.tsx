@@ -1,7 +1,6 @@
 // The public "experiment in the open" page: the pre-registered design plus live numbers from Flagsmith.
 // TODO(team): once the results JSON shape is known from a real experiment, show per-variation numbers as a
 // table instead of raw JSON.
-import Link from 'next/link';
 import { fetchExperimentResults } from '@/lib/server/experiment-results';
 
 export const revalidate = 300;
@@ -9,15 +8,18 @@ export const revalidate = 300;
 export default async function ResultsPage() {
   const results = await fetchExperimentResults();
   return (
-    <div className="space-y-6">
-      <Link href="/" className="text-sm underline">
-        Back to the doctor
-      </Link>
-      <h1 className="text-3xl font-bold">The experiment, in the open</h1>
+    <div className="max-w-3xl space-y-10">
+      <header className="space-y-3">
+        <h1 className="font-display text-4xl font-semibold tracking-tight sm:text-5xl">The experiment, in the open</h1>
+        <p className="max-w-[65ch] text-lg text-muted">
+          The scan page is an A/B test run with Flagsmith Experimentation. Here is what we decided before launch, and the live
+          numbers.
+        </p>
+      </header>
 
-      <section className="space-y-2">
-        <h2 className="text-xl font-semibold">Pre-registered design</h2>
-        <ul className="list-disc space-y-1 pl-5">
+      <section className="space-y-3">
+        <h2 className="font-display text-2xl font-semibold tracking-tight">Pre-registered design</h2>
+        <ul className="max-w-[70ch] list-disc space-y-2 pl-5 leading-relaxed marker:text-ember-600">
           <li>
             Hypothesis: showing a ready-made fix (variant <code>patch</code>) instead of an issue list with docs links (control{' '}
             <code>issues</code>) raises the share of teams that reach a clean re-scan in one visit, without slowing them down.
@@ -33,15 +35,15 @@ export default async function ResultsPage() {
         </ul>
       </section>
 
-      <section className="space-y-2">
-        <h2 className="text-xl font-semibold">Live results</h2>
+      <section className="space-y-3">
+        <h2 className="font-display text-2xl font-semibold tracking-tight">Live results</h2>
         {results.status === 'ok' && (
           <>
-            <p className="text-sm text-slate-500">Fetched {results.fetchedAt} (refreshed at most every 5 minutes).</p>
-            <pre className="overflow-x-auto rounded-md bg-slate-900 p-4 text-sm text-slate-100">{JSON.stringify(results.results, null, 2)}</pre>
+            <p className="text-sm text-muted">Fetched {results.fetchedAt} (refreshed at most every 5 minutes).</p>
+            <pre className="overflow-x-auto rounded-xl bg-ink p-4 font-mono text-[13px] text-paper">{JSON.stringify(results.results, null, 2)}</pre>
           </>
         )}
-        {results.status === 'not-configured' && <p>The experiment has not started yet.</p>}
+        {results.status === 'not-configured' && <p className="rounded-xl border border-line bg-white p-4 text-muted">The experiment has not started yet. Numbers appear here once it is running.</p>}
         {results.status === 'error' && <p>Results are unavailable right now ({results.message}).</p>}
       </section>
     </div>

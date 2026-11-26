@@ -2,7 +2,112 @@
 /* Design skills in .claude/ contain HTML and JS demos; keep their class names out of our CSS. */
 @source not "../.claude";
 
-body {
-  background: #f8fafc;
-  color: #0f172a;
+/*
+ * Design tokens: a warm, friendly palette of our own (not Flagsmith's look).
+ * Text colours are checked for WCAG AA (4.5:1) on white and on `sand`.
+ */
+@theme {
+  --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-bricolage), var(--font-figtree), ui-sans-serif, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-paper: #ffffff;
+  --color-ink: #2b2420;
+  --color-muted: #6b5f57;
+  --color-line: #e7ddd3;
+  --color-sand: #f6efe7;
+
+  --color-ember-50: #fff5ee;
+  --color-ember-100: #fde6d6;
+  --color-ember-600: #c2410c;
+  --color-ember-700: #9a3412;
+  --color-ember-800: #7c2d12;
+
+  --color-leaf-50: #ecf6ee;
+  --color-leaf-200: #bfe0c7;
+  --color-leaf-700: #1f6b3b;
+  --color-leaf-800: #17552e;
+
+  --color-certain-50: #fdeeee;
+  --color-certain-800: #9b1c1c;
+  --color-possible-50: #fdf4dd;
+  --color-possible-800: #854a0e;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@layer base {
+  html {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    scrollbar-color: var(--color-line) transparent;
+  }
+
+  ::selection {
+    background: var(--color-ember-100);
+    color: var(--color-ink);
+  }
+
+  textarea,
+  input {
+    caret-color: var(--color-ember-600);
+  }
+
+  a {
+    text-underline-offset: 0.2em;
+    text-decoration-thickness: 1px;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ember-600);
+    outline-offset: 2px;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p,
+  li {
+    text-wrap: pretty;
+  }
+}
+
+/* The one authored motion moment: the check mark draws itself when a scan comes back clean. */
+@keyframes draw-check {
+  from {
+    stroke-dashoffset: 24;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes settle-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.clean-check path {
+  stroke-dasharray: 24;
+  animation: draw-check 600ms var(--ease-out-expo) 120ms both;
+}
+
+.settle-in {
+  animation: settle-in 420ms var(--ease-out-expo) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .clean-check path,
+  .settle-in {
+    animation: none;
+  }
 }
