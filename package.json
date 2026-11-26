@@ -2,6 +2,7 @@
   "name": "experiment-doctor",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "description": "Finds the Flagsmith Experimentation setup bugs that make events disappear silently.",
   "engines": {
     "node": ">=20"
