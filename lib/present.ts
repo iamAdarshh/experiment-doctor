@@ -74,3 +74,54 @@ export function describeLocation(code: string, issue: Issue): string {
   }
   return `code line ${issue.line}`;
 }
+
+export type FixedCode = {
+  /** The code box with every code fix that could be applied. */
+  text: string;
+  /** How many code fixes were applied. */
+  applied: number;
+  /** Code fixes left out because they touch the same lines as another fix (copy those from their own card). */
+  skipped: number;
+  /** Fixes for other boxes (dependency file, commands): not part of the code, so copied from their own card. */
+  elsewhere: number;
+};
+
+/**
+ * The variant's "Copy all fixed code": applies every code fix to the scanned code at once.
+ *
+ * Each fix's `before` is unique in the code (lib/doctor/patch.ts grows it until it is), so we find where each
+ * one sits in the ORIGINAL code, then replace from the bottom up: a replacement lower down never moves the
+ * text above it, so the positions found first stay correct. Two fixes on overlapping lines can't both apply;
+ * the upper one is kept and the other is counted as skipped, never silently merged.
+ */
+export function applyCodeFixes(code: string, issues: Issue[]): FixedCode {
+  const elsewhere = issues.filter((issue) => issue.patch && (issue.source !== 'code' || 'command' in issue.patch)).length;
+
+  const edits: { start: number; end: number; after: string }[] = [];
+  let skipped = 0;
+  for (const issue of issues) {
+    const patch = issue.patch;
+    if (!patch || issue.source !== 'code' || 'command' in patch) continue;
+    const start = code.indexOf(patch.before);
+    if (start === -1) {
+      skipped += 1;
+      continue;
+    }
+    edits.push({ start, end: start + patch.before.length, after: patch.after });
+  }
+
+  // Top to bottom, keep an edit only if it starts after the previous kept one ends.
+  edits.sort((a, b) => a.start - b.start);
+  const kept: typeof edits = [];
+  for (const edit of edits) {
+    const previous = kept[kept.length - 1];
+    if (previous && edit.start < previous.end) skipped += 1;
+    else kept.push(edit);
+  }
+
+  let text = code;
+  for (const edit of [...kept].reverse()) {
+    text = text.slice(0, edit.start) + edit.after + text.slice(edit.end);
+  }
+  return { text, applied: kept.length, skipped, elsewhere };
+}

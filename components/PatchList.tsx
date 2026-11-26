@@ -1,26 +1,54 @@
 'use client';
 
 // Variant arm (`patch`): the same issue cards, with a ready-made fix and a copy button in place of the docs link.
-// Issues without a fix show the same docs link as the control arm.
+// Issues without a fix show the same docs link as the control arm. When there are two or more code fixes, a
+// "Copy all fixed code" panel above the list copies the whole scanned code with every code fix applied.
 import { useEffect, useState } from 'react';
 import type { Issue, Patch } from '@/lib/doctor';
+import { applyCodeFixes, type FixedCode } from '@/lib/present';
 import { CheckIcon, CopyIcon } from './icons';
 import { DocsLink, IssueCard } from './IssueCard';
 
-type Props = { issues: Issue[]; locate: (issue: Issue) => string; onCopy: () => void };
+type Props = { issues: Issue[]; code: string; locate: (issue: Issue) => string; onCopy: () => void };
 
-export function PatchList({ issues, locate, onCopy }: Props) {
+export function PatchList({ issues, code, locate, onCopy }: Props) {
+  const fixed = applyCodeFixes(code, issues);
   return (
-    <ol className="space-y-3">
-      {issues.map((issue, index) => (
-        <IssueCard
-          key={index}
-          issue={issue}
-          location={locate(issue)}
-          action={issue.patch ? <FixBlock patch={issue.patch} onCopy={onCopy} /> : <DocsLink issue={issue} />}
-        />
-      ))}
-    </ol>
+    <div className="space-y-4">
+      {fixed.applied >= 2 && <CopyAllPanel fixed={fixed} onCopy={onCopy} />}
+      <ol className="space-y-3">
+        {issues.map((issue, index) => (
+          <IssueCard
+            key={index}
+            issue={issue}
+            location={locate(issue)}
+            action={issue.patch ? <FixBlock patch={issue.patch} onCopy={onCopy} /> : <DocsLink issue={issue} />}
+          />
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+function plural(count: number, one: string, many: string): string {
+  return count === 1 ? one : many;
+}
+
+function CopyAllPanel({ fixed, onCopy }: { fixed: FixedCode; onCopy: () => void }) {
+  return (
+    <div className="rounded-2xl border border-line bg-surface p-5">
+      <h3 className="font-semibold text-ink">Fix everything at once</h3>
+      <p className="mt-1 max-w-[70ch] text-sm leading-relaxed text-muted">
+        Your code with {fixed.applied} fixes applied. Paste it over the code you scanned.
+        {fixed.skipped > 0 &&
+          ` ${fixed.skipped} ${plural(fixed.skipped, 'fix touches', 'fixes touch')} the same lines as another, so copy ${plural(fixed.skipped, 'it', 'them')} from ${plural(fixed.skipped, 'its card', 'their cards')} below.`}
+        {fixed.elsewhere > 0 &&
+          ` ${fixed.elsewhere} ${plural(fixed.elsewhere, 'fix is', 'fixes are')} outside your code (dependency file or a command); copy ${plural(fixed.elsewhere, 'it', 'them')} from ${plural(fixed.elsewhere, 'its card', 'their cards')}.`}
+      </p>
+      <div className="mt-4">
+        <CopyButton text={fixed.text} label="Copy all fixed code" onCopy={onCopy} primary />
+      </div>
+    </div>
   );
 }
 
@@ -44,9 +72,9 @@ function CodeLines({ text, sign, className }: { text: string; sign: '+' | '-' | 
 
 type CopyState = 'idle' | 'copied' | 'failed';
 
-function FixBlock({ patch, onCopy }: { patch: Patch; onCopy: () => void }) {
+/** A copy button with "Copied" feedback and a fallback message when the browser blocks the clipboard. */
+function CopyButton({ text, label, onCopy, primary = false }: { text: string; label: string; onCopy: () => void; primary?: boolean }) {
   const [state, setState] = useState<CopyState>('idle');
-  const copyText = 'command' in patch ? patch.command : patch.after;
 
   // "Copied" is a moment, not a state to keep: reset it so a second copy also gets feedback.
   useEffect(() => {
@@ -57,7 +85,7 @@ function FixBlock({ patch, onCopy }: { patch: Patch; onCopy: () => void }) {
 
   async function copy() {
     try {
-      await navigator.clipboard.writeText(copyText);
+      await navigator.clipboard.writeText(text);
       setState('copied');
       onCopy();
     } catch {
@@ -65,6 +93,31 @@ function FixBlock({ patch, onCopy }: { patch: Patch; onCopy: () => void }) {
     }
   }
 
+  const look = primary
+    ? 'bg-ink text-white hover:bg-ink-soft'
+    : 'border border-line bg-white text-ink hover:border-ink';
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      <button
+        type="button"
+        onClick={() => void copy()}
+        className={`inline-flex min-h-10 items-center gap-2 rounded-full px-4 text-sm font-semibold transition-colors ${look}`}
+      >
+        {state === 'copied' ? (
+          <CheckIcon className={`size-4 ${primary ? '' : 'text-leaf-700'}`} />
+        ) : (
+          <CopyIcon className="size-4" />
+        )}
+        {state === 'copied' ? 'Copied' : label}
+      </button>
+      <span role="status" className="text-sm text-muted">
+        {state === 'failed' && 'Copy was blocked by the browser. Select the code and copy it yourself.'}
+      </span>
+    </div>
+  );
+}
+
+function FixBlock({ patch, onCopy }: { patch: Patch; onCopy: () => void }) {
   return (
     <div className="space-y-3">
       {'command' in patch ? (
@@ -84,19 +137,7 @@ function FixBlock({ patch, onCopy }: { patch: Patch; onCopy: () => void }) {
           </div>
         </div>
       )}
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          onClick={() => void copy()}
-          className="inline-flex min-h-10 items-center gap-2 rounded-full border border-line bg-white px-4 text-sm font-semibold text-ink transition-colors hover:border-ink"
-        >
-          {state === 'copied' ? <CheckIcon className="size-4 text-leaf-700" /> : <CopyIcon className="size-4" />}
-          {state === 'copied' ? 'Copied' : 'Copy fix'}
-        </button>
-        <span role="status" className="text-sm text-muted">
-          {state === 'failed' && 'Copy was blocked by the browser. Select the code above and copy it yourself.'}
-        </span>
-      </div>
+      <CopyButton text={'command' in patch ? patch.command : patch.after} label="Copy fix" onCopy={onCopy} />
     </div>
   );
 }

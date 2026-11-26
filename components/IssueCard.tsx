@@ -1,5 +1,5 @@
-// One issue, as both experiment arms show it. The arms share this card so that they can differ in exactly one
-// place, the `action` slot (PRODUCT.md, "Experiment integrity"):
+// One issue, as both experiment arms show it. The arms share this card so that, per issue, they differ in exactly
+// one place, the `action` slot (PRODUCT.md, "Experiment integrity"):
 //   control `issues`: <DocsLink>
 //   variant `patch`:  <FixBlock> where the issue has a fix, otherwise the same <DocsLink> as control.
 

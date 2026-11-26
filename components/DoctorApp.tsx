@@ -171,7 +171,7 @@ export function DoctorApp() {
           headingRef={headingRef}
           issueList={
             presentation === 'patch' ? (
-              <PatchList issues={issues} locate={locate} onCopy={() => void sendPatchCopied()} />
+              <PatchList issues={issues} code={scanned.code} locate={locate} onCopy={() => void sendPatchCopied()} />
             ) : (
               <IssueList issues={issues} locate={locate} />
             )

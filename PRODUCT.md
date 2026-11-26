@@ -46,16 +46,18 @@ no LLM in the result path; the same input always gives the same result ID.
 - **Experiment integrity:**
   - The two arms must stay identical except for one difference, per the pre-registration ("a ready-made fix
     instead of a diagnosis with docs links"): where an issue has a fix, the variant shows the fix (patch plus copy
-    button) in place of the docs link. Issues without a fix show the same docs link in both arms.
+    button) in place of the docs link. Issues without a fix show the same docs link in both arms. With two or more
+    code fixes, the variant also offers "Copy all fixed code" above the list (the same fixes, applied at once).
   - The exposure is recorded only when the first issue list renders. Visitors with a clean first scan are never
     enrolled.
   - The UI refactor ships before the Production experiment launches (evening IST, 26 Nov 2026).
   - After launch the UI is frozen, except for bug fixes that affect both arms equally.
 - Next.js 15 App Router, React 19, Tailwind CSS 4, hosted on Vercel. No database, no auth, no LLM in the result path.
 - UI work: Adarsh builds it, Anmol reviews.
-- **Open decision (variant):** "Copy fix" copies only the replacement text (the "With" side). Copying the whole
-  corrected block instead may be better. Revisit only if there is time **before** the Production launch: it changes
-  the variant arm, so it is frozen once the experiment runs.
+- **Decided (26 Nov, before launch):** each "Copy fix" copies the whole corrected block (the "With" side is made of
+  whole lines, so it pastes straight over the "Replace" lines). The variant also has "Copy all fixed code", which
+  copies the scanned code with every code fix applied (`applyCodeFixes` in `lib/present.ts`). Frozen once the
+  Production experiment runs.
 
 ## Brand Commitments
 - Name: **Experiment Doctor**, described as a tool *for* Flagsmith. It must not look like an official Flagsmith
