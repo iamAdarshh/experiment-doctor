@@ -63,9 +63,11 @@ export function DoctorApp() {
     const next = runChecks(input);
     const outcome = recordScan(session, certainIssues(next).length, Date.now());
 
-    let arm = presentation;
-    if (outcome.enrollNow) {
-      arm = process.env.NEXT_PUBLIC_FLAGSMITH_ENV_ID ? await enrollAndGetPresentation() : previewArm();
+    // Ask for the arm on the enrolling scan, and again after a page refresh: the session (enrolled) survives
+    // in sessionStorage but the arm does not, and without this an enrolled variant visitor would see control.
+    // getExperimentFlag returns the same variant for the same identity, so asking twice is safe.
+    if (outcome.session.enrolled && presentation === null) {
+      const arm = process.env.NEXT_PUBLIC_FLAGSMITH_ENV_ID ? await enrollAndGetPresentation() : previewArm();
       setPresentation(arm);
     }
     setResult(next);
@@ -76,6 +78,7 @@ export function DoctorApp() {
   }
 
   const certainCount = result ? certainIssues(result).length : 0;
+  const possibleCount = result ? result.issues.length - certainCount : 0;
 
   return (
     <div className="space-y-8">
@@ -85,6 +88,7 @@ export function DoctorApp() {
         <section className="space-y-4">
           <h2 className="text-xl font-semibold">
             {certainCount === 0 ? 'No blocking issues found' : `${certainCount} issue${certainCount === 1 ? '' : 's'} will lose experiment events`}
+            {possibleCount > 0 && `${certainCount === 0 ? ', but' : ','} ${possibleCount} more might`}
           </h2>
 
           {result.issues.length > 0 &&
