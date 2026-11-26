@@ -44,7 +44,7 @@ Hashing uses Web Crypto, which is async; keep `runChecks` sync and pure, and com
 | 5 | `sdk-too-old` | versions below table minimums; `flagsmith-nodejs` package | dependencies | certain | version bump | Day 1 |
 | 6 | `no-exposure` | experiment flag read via `getAllFlags`/`getValue`/`getFlags` with no `trackExposureEvent` for it | code | possible | use `getExperimentFlag` | Day 2 |
 | 7 | `no-identity` | events/experiment flags with no `identify()` | code | certain | identify first | Day 2 |
-| 8 | `identity-mismatch` | identity in `identify()` differs from the one used in server SDK code | code | possible | one shared id | Day 2 |
+| 8 | `identity-mismatch` | inside one function, the exposure (`identify()`, Node `getExperimentFlag`, `trackExposureEvent`) and the conversion (`trackEvent` identifier) use different identity expressions | code | possible | one shared id | Day 2 |
 | 9 | `conversion-before-exposure` | `trackEvent` on a path before the experiment flag read | code | possible | read flag earlier | Day 3 |
 | 10 | `selfhosted-events-url` | `eventsApiUrl` ends in `/v1/events`, or custom `api` without `eventsApiUrl` | code | certain | correct URL shape | Day 3 |
 | 11 | `analytics-vs-events` | `enableAnalytics: true` without `enableEvents`; `eventProcessorConfig` without `enableEvents` (init throws) | code | certain | add `enableEvents: true` | Day 3 |

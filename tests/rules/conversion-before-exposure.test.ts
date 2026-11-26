@@ -12,4 +12,10 @@ describe('conversion-before-exposure', () => {
     ].join('\n');
     expect(issuesFor('conversion-before-exposure', code)).toEqual([]);
   });
+
+  it('does not compare the top level of two different pasted files', () => {
+    const server = "import Flagsmith from '@flagsmith/nodejs';\nconst flagsmith = new Flagsmith({ environmentKey: 'k', enableEvents: true });\n";
+    const code = `// @file scripts/ping.ts\n${server}flagsmith.trackEvent('purchase', { identifier: 'ping' });\nawait flagsmith.close();\n// @file scripts/run.ts\n${server}await flagsmith.getExperimentFlag('f', 'u');\nawait flagsmith.close();`;
+    expect(issuesFor('conversion-before-exposure', code)).toEqual([]);
+  });
 });

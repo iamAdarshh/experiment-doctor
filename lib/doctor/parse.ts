@@ -33,6 +33,8 @@ export type CallFact = Pos & {
   firstStringNode?: t.Node;
   /** Start offset of the enclosing function, or -1 at the top level. Used to compare order inside one function. */
   scopeId: number;
+  /** Which pasted file (`// @file` section) the call is in, counting from 0. */
+  file: number;
   statement?: StatementInfo;
   /** True when an `await` is allowed where the call is (async function, or top level of a module). */
   canAwait: boolean;
@@ -135,6 +137,20 @@ export function detectOtherLanguage(code: string): string | null {
 
 const FLAGSMITH_PACKAGE = /flagsmith/i;
 const EVENT_METHODS = new Set(['getExperimentFlag', 'trackEvent', 'trackExposureEvent', 'flushEvents']);
+/** Methods no other common SDK has (trackEvent and identify are shared with analytics tools, so they don't count). */
+const FLAGSMITH_ONLY_METHODS = new Set(['getExperimentFlag', 'trackExposureEvent']);
+
+/** `window.flagsmith`, `globalThis.flagsmith` or `self.flagsmith`. */
+function isGlobalFlagsmith(node: t.Node): boolean {
+  return (
+    node.type === 'MemberExpression' &&
+    !node.computed &&
+    node.object.type === 'Identifier' &&
+    ['window', 'globalThis', 'self'].includes(node.object.name) &&
+    node.property.type === 'Identifier' &&
+    node.property.name === 'flagsmith'
+  );
+}
 
 export function analyzeCode(code: string): CodeAnalysis {
   const otherLanguage = detectOtherLanguage(code);
@@ -149,32 +165,19 @@ export function analyzeCode(code: string): CodeAnalysis {
   const parseErrors: ParseError[] = [];
   const programs: { program: t.Program; segment: Segment }[] = [];
   for (const segment of splitSegments(code)) {
-    try {
-      const file = parse(segment.text, {
-        sourceType: 'module',
-        plugins: ['typescript', 'jsx'],
-        errorRecovery: true,
-        allowAwaitOutsideFunction: true,
-        allowReturnOutsideFunction: true,
-        startLine: segment.startLine,
-        startIndex: segment.startIndex,
-        startColumn: 0,
-      });
-      // With errorRecovery, babel lists errors it recovered from. We still treat them as parse errors,
-      // because a half-understood file could hide a bug and give a false all-clear.
-      const recovered = (file as unknown as { errors?: { loc?: { line: number }; reasonCode?: string; message: string }[] }).errors ?? [];
-      for (const error of recovered) {
-        parseErrors.push({ source: 'code', line: error.loc?.line ?? segment.startLine, message: cleanBabelMessage(error.message) });
-      }
-      programs.push({ program: file.program, segment });
-    } catch (error) {
-      const loc = (error as { loc?: { line: number } }).loc;
-      parseErrors.push({
-        source: 'code',
-        line: loc?.line ?? segment.startLine,
-        message: cleanBabelMessage((error as Error).message),
-      });
+    // A `#!/usr/bin/env node` line is only legal as the very first line, but in a multi-file paste it follows the
+    // `// @file` marker. Turn `#!` into `//` (same length, so every position stays the same).
+    const text = segment.text.replace(/^((?:\/\/ @file .*\n)?)#!/, '$1//');
+    let attempt = parseSegment(text, segment, true);
+    // `<any>window` (an old-style TypeScript cast) is valid in a .ts file but reads as JSX. When parsing with JSX
+    // fails and the file is not known to be .tsx/.jsx, try again without JSX and keep that if it parses cleanly.
+    if (attempt.errors.length > 0 && !/\.(tsx|jsx)$/.test(segment.path ?? '')) {
+      const withoutJsx = parseSegment(text, segment, false);
+      if (withoutJsx.errors.length === 0) attempt = withoutJsx;
     }
+    // A half-understood file could hide a bug and give a false all-clear, so recovered errors still count.
+    parseErrors.push(...attempt.errors);
+    if (attempt.program) programs.push({ program: attempt.program, segment });
   }
 
   if (parseErrors.length > 0) {
@@ -185,6 +188,29 @@ export function analyzeCode(code: string): CodeAnalysis {
   const collector = new FactCollector();
   for (const { program } of programs) collector.collectProgram(program);
   return { ok: true, facts: collector.finish() };
+}
+
+/** Parses one pasted file. `decorators-legacy` covers Angular and NestJS (`@Component(...)`). */
+function parseSegment(text: string, segment: Segment, jsx: boolean): { program?: t.Program; errors: ParseError[] } {
+  try {
+    const file = parse(text, {
+      sourceType: 'module',
+      plugins: jsx ? ['typescript', 'jsx', 'decorators-legacy'] : ['typescript', 'decorators-legacy'],
+      errorRecovery: true,
+      allowAwaitOutsideFunction: true,
+      allowReturnOutsideFunction: true,
+      startLine: segment.startLine,
+      startIndex: segment.startIndex,
+      startColumn: 0,
+    });
+    // With errorRecovery, babel lists errors it recovered from.
+    const recovered = (file as unknown as { errors?: { loc?: { line: number }; message: string }[] }).errors ?? [];
+    const errors = recovered.map((error) => ({ source: 'code' as const, line: error.loc?.line ?? segment.startLine, message: cleanBabelMessage(error.message) }));
+    return { program: file.program, errors };
+  } catch (error) {
+    const loc = (error as { loc?: { line: number } }).loc;
+    return { errors: [{ source: 'code', line: loc?.line ?? segment.startLine, message: cleanBabelMessage((error as Error).message) }] };
+  }
 }
 
 /** Babel messages end with "(line:column)"; we report the line separately. */
@@ -243,7 +269,15 @@ type WalkState = { scopeId: number; isAsync: boolean; statement?: StatementInfo 
  */
 class FactCollector {
   private flagsmithNames = new Set<string>();
-  private receiverRuntime = new Map<string, Runtime>();
+  /** Names imported or required from a Flagsmith package (`Flagsmith` from '@flagsmith/nodejs', ...). */
+  private sdkImports = new Set<string>();
+  /** Runtime of each client name, per pasted file: `${fileIndex}:${name}`. A browser file and a Node script can
+   *  both call their client `flagsmith`, so a name's runtime in one file must not leak into another. */
+  private fileRuntime = new Map<string, Runtime>();
+  /** The same across files, for names imported from another pasted file. 'mixed' when files disagree. */
+  private nameRuntime = new Map<string, Runtime | 'mixed'>();
+  /** Index of the pasted file being read (both passes go file by file). */
+  private fileIndex = 0;
   private objectVariables = new Map<string, t.Node>();
   private importedFlagsmith = false;
   private importedNodeSdk = false;
@@ -262,6 +296,7 @@ class FactCollector {
         statement.type === 'ExportNamedDeclaration' ||
         statement.type === 'ExportDefaultDeclaration',
     );
+    this.fileIndex = this.programs.length;
     this.programs.push({ program, isModule });
     this.findStringConstants(program);
     this.findBindings(program);
@@ -305,9 +340,10 @@ class FactCollector {
   }
 
   finish(): CodeFacts {
-    for (const { program, isModule } of this.programs) {
+    this.programs.forEach(({ program, isModule }, index) => {
+      this.fileIndex = index;
       this.walk(program, { scopeId: -1, isAsync: isModule });
-    }
+    });
     const usesFlagsmith =
       this.importedFlagsmith || this.configs.length > 0 || this.calls.some((call) => call.onFlagsmith);
     return {
@@ -327,34 +363,52 @@ class FactCollector {
         if (isNodeSdk) this.importedNodeSdk = true;
         for (const specifier of node.specifiers) {
           this.flagsmithNames.add(specifier.local.name);
-          if (isNodeSdk) this.receiverRuntime.set(specifier.local.name, 'node');
+          this.sdkImports.add(specifier.local.name);
+          // The browser SDK (also `/isomorphic`, used in scripts) has the browser API: init, identify, no identity per call.
+          this.setRuntime(specifier.local.name, isNodeSdk ? 'node' : 'browser');
         }
       }
       if (node.type === 'VariableDeclarator' && node.id.type === 'Identifier' && node.init) {
         const name = node.id.name;
         const init = unwrapAwait(node.init);
         if (init.type === 'ObjectExpression' && !this.objectVariables.has(name)) this.objectVariables.set(name, init);
-        if (init.type === 'NewExpression' && /flagsmith/i.test(lastName(init.callee) ?? '')) {
+        // The SDK loaded with a <script> tag lives on `window.flagsmith`; teams often give it a short name.
+        if (isGlobalFlagsmith(init)) {
           this.flagsmithNames.add(name);
-          this.receiverRuntime.set(name, 'node');
+          this.setRuntime(name, 'browser');
+        }
+        if (init.type === 'NewExpression' && this.isSdkClass(init.callee)) {
+          this.flagsmithNames.add(name);
+          this.setRuntime(name, 'node');
         }
         if (init.type === 'CallExpression') {
           const callee = lastName(init.callee) ?? '';
           if (callee === 'useFlagsmith' || callee === 'createFlagsmithInstance') {
             this.flagsmithNames.add(name);
-            this.receiverRuntime.set(name, 'browser');
+            this.setRuntime(name, 'browser');
           }
           if (callee === 'require' && FLAGSMITH_PACKAGE.test(stringValue(init.arguments[0]) ?? '')) {
             this.importedFlagsmith = true;
             this.flagsmithNames.add(name);
             if (/nodejs/.test(stringValue(init.arguments[0]) ?? '')) {
               this.importedNodeSdk = true;
-              this.receiverRuntime.set(name, 'node');
+              this.setRuntime(name, 'node');
             }
           }
         }
       }
       if (node.type === 'CallExpression' && lastName(node.callee) === 'listen') this.looksLikeServer = true;
+      // Only a Flagsmith client has these methods, so whatever they are called on is one (`client.getExperimentFlag()`).
+      if (
+        (node.type === 'CallExpression' || node.type === 'OptionalCallExpression') &&
+        (node.callee.type === 'MemberExpression' || node.callee.type === 'OptionalMemberExpression') &&
+        node.callee.object.type === 'Identifier' &&
+        !node.callee.computed &&
+        node.callee.property.type === 'Identifier' &&
+        FLAGSMITH_ONLY_METHODS.has(node.callee.property.name)
+      ) {
+        this.flagsmithNames.add(node.callee.object.name);
+      }
       if (
         node.type === 'ExportNamedDeclaration' &&
         node.declaration?.type === 'FunctionDeclaration' &&
@@ -371,9 +425,19 @@ class FactCollector {
     return this.flagsmithNames.has(name) || /flagsmith/i.test(name);
   }
 
+  private setRuntime(name: string, runtime: Runtime) {
+    this.fileRuntime.set(`${this.fileIndex}:${name}`, runtime);
+    const known = this.nameRuntime.get(name);
+    this.nameRuntime.set(name, known === undefined || known === runtime ? runtime : 'mixed');
+  }
+
+  /** The runtime of a client name in the current file, else from the other files when they all agree. */
   private runtimeOf(receiver: string | undefined): Runtime | undefined {
-    if (receiver && this.receiverRuntime.has(receiver)) return this.receiverRuntime.get(receiver);
-    return undefined;
+    if (!receiver) return undefined;
+    const inFile = this.fileRuntime.get(`${this.fileIndex}:${receiver}`);
+    if (inFile) return inFile;
+    const elsewhere = this.nameRuntime.get(receiver);
+    return elsewhere === 'mixed' ? undefined : elsewhere;
   }
 
   // ---- pass 2: calls, configs and flag reads -----------------------------------------------------
@@ -458,7 +522,7 @@ class FactCollector {
     // SDK configs from `<client>.init({...})`.
     if (name === 'init' && onFlagsmith) {
       this.addConfig(node.arguments[0] as t.Node | undefined, node, 'browser', state, receiver);
-      if (receiver) this.receiverRuntime.set(receiver, 'browser');
+      if (receiver) this.setRuntime(receiver, 'browser');
     }
 
     const isInteresting = onFlagsmith || EVENT_METHODS.has(name) || name === 'useExperiment' || name === 'identify' || name === 'close';
@@ -473,14 +537,24 @@ class FactCollector {
       firstString: flagArg,
       firstStringNode: flagNode,
       scopeId: state.scopeId,
+      file: this.fileIndex,
       statement: state.statement,
       canAwait: state.isAsync,
       runtime: this.runtimeOf(receiver) ?? (name === 'useExperiment' ? 'browser' : undefined),
     });
   }
 
+  /**
+   * `new X()` creates a Flagsmith SDK client when X is called `Flagsmith` (snippets often skip the import) or was
+   * imported from a Flagsmith package. A team's own class such as `FlagsmithClient` (an Admin API wrapper) is not.
+   */
+  private isSdkClass(callee: t.Node): boolean {
+    const name = lastName(callee) ?? '';
+    return name === 'Flagsmith' || this.sdkImports.has(name);
+  }
+
   private recordNew(node: t.NewExpression, state: WalkState) {
-    if (!/flagsmith/i.test(lastName(node.callee) ?? '')) return;
+    if (!this.isSdkClass(node.callee)) return;
     this.addConfig(node.arguments[0] as t.Node | undefined, node, 'node', state, undefined);
   }
 

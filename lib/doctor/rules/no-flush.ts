@@ -10,7 +10,9 @@ import type { Rule } from '../rule';
 import type { Patch } from '../types';
 
 function hasFlush(code: CodeFacts): boolean {
-  return code.calls.some((call) => call.onFlagsmith && (call.name === 'flushEvents' || call.name === 'close'));
+  // `flushEvents` is Flagsmith's own name, so it counts on any receiver, including `client()?.flushEvents()`.
+  // `close` is a common name, so it only counts on a known Flagsmith client.
+  return code.calls.some((call) => call.name === 'flushEvents' || (call.onFlagsmith && call.name === 'close'));
 }
 
 /** Browser: add a pagehide listener right after the `init(...)` statement. */
