@@ -1,0 +1,21 @@
+{
+  "name": "flagmedic",
+  "version": "1.0.0",
+  "description": "Watches running Flagsmith experiments, catches broken measurement, ships the winner after human approval",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test test/flagmedic.test.mjs",
+    "check": "node bin/flagmedic.mjs check"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@flagsmith/flagsmith": "^12.6.0",
+    "@flagsmith/nodejs": "^9.5.0"
+  },
+  "type": "module",
+  "bin": {
+    "flagmedic": "bin/flagmedic.mjs"
+  }
+}

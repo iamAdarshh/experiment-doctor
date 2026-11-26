@@ -1,0 +1,33 @@
+{
+  "name": "lintmus",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc -b",
+    "ping": "node --env-file=.env scripts/prework-ping.ts",
+    "smoke": "node --env-file=.env scripts/smoke.ts",
+    "simulate": "node --env-file-if-exists=.env scripts/simulate.ts",
+    "power": "node scripts/power.ts",
+    "expected-loss": "node scripts/expected-loss.ts"
+  },
+  "dependencies": {
+    "@flagsmith/flagsmith": "^12.6.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@flagsmith/nodejs": "^9.5.0",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "5.2.0",
+    "typescript": "^7.0.2",
+    "vite": "7.3.8",
+    "vitest": "4.1.12"
+  }
+}

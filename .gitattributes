@@ -1,0 +1,2 @@
+# Other projects' code used as doctor test input: keep it out of the repo's language stats.
+tests/real-world/** linguist-vendored

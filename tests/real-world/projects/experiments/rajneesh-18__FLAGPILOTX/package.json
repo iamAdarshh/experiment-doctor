@@ -1,0 +1,16 @@
+{
+  "name": "@flagpilot/simulator",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "simulate": "tsx src/simulate.ts"
+  },
+  "dependencies": {
+    "@flagsmith/nodejs": "^9.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "20",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

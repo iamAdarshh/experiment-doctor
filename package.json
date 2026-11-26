@@ -15,7 +15,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "doctor": "tsx scripts/doctor.ts",
-    "doctor:self": "tsx scripts/doctor-self.ts"
+    "doctor:self": "tsx scripts/doctor-self.ts",
+    "real-world": "tsx scripts/real-world.ts"
   },
   "dependencies": {
     "@babel/parser": "7.29.15",

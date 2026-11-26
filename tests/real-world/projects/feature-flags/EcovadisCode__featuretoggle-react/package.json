@@ -1,0 +1,73 @@
+{
+  "name": "featuretoggle-react",
+  "version": "1.0.0",
+  "description": "Library to use Feature Toggles of your choice in a React application",
+  "main": "lib/",
+  "scripts": {
+    "build": "rm -rf lib && ./node_modules/.bin/babel src/ -d lib/",
+    "prepare-test": "cd test_setup && yarn",
+    "lint": "./node_modules/.bin/eslint src --ext .js",
+    "test": "yarn prepare-test && yarn lint && jest"
+  },
+  "files": [
+    "lib",
+    "src"
+  ],
+  "keywords": [
+    "React",
+    "Optimizely",
+    "Flagsmith",
+    "LaunchDarkly",
+    "toggles",
+    "flags",
+    "feature toggle",
+    "feature flag"
+  ],
+  "author": "Jakub Gawlikowski",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/EcovadisCode/featuretoggle-react.git"
+  },
+  "dependencies": {
+    "@optimizely/optimizely-sdk": "^4.6.0",
+    "flagsmith": "^1.4.1",
+    "launchdarkly-react-client-sdk": "^2.22.2"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.13.16",
+    "@babel/core": "^7.14.2",
+    "@babel/preset-env": "^7.14.2",
+    "@babel/preset-es2015": "^7.0.0-beta.53",
+    "@babel/preset-react": "^7.13.13",
+    "babel-eslint": "^10.1.0",
+    "enzyme": "^3.11.0",
+    "enzyme-adapter-react-16": "^1.15.6",
+    "eslint": "^7.28.0",
+    "eslint-config-airbnb": "^18.2.1",
+    "eslint-config-react-app": "^6.0.0",
+    "eslint-plugin-flowtype": "^5.7.2",
+    "eslint-plugin-import": "^2.23.4",
+    "eslint-plugin-jsx-a11y": "^6.4.1",
+    "eslint-plugin-react": "^7.24.0",
+    "eslint-plugin-react-hooks": "^4.2.0",
+    "jest": "^27.0.4"
+  },
+  "jest": {
+    "testPathIgnorePatterns": [
+      "<rootDir>/lib/"
+    ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/setupTests.js"
+    ],
+    "moduleDirectories": [
+      "node_modules",
+      "test_setup/node_modules"
+    ],
+    "testEnvironment": "jsdom"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "last-call",
+  "version": "0.1.0",
+  "description": "Last Call finishes Flagsmith experiments: it reads the results, and after a human merges the pull request it ends the experiment, rolls out the winner on the same flag and deletes the losing code.",
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "review": "node bin/last-call.mjs review",
+    "demo": "node demo/server.mjs",
+    "setup": "node scripts/setup-experiments.mjs"
+  },
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "@flagsmith/cli": "^2.0.0",
+    "@flagsmith/nodejs": "^9.5.0"
+  },
+  "private": true,
+  "bin": {
+    "last-call": "bin/last-call.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

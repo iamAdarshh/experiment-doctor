@@ -1,0 +1,45 @@
+{
+  "name": "rollback-drill",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc -b",
+    "check": "npm run typecheck && npm run lint && npm test",
+    "validate-scenarios": "node scripts/validate-scenarios.ts",
+    "simulate": "node scripts/simulate.ts",
+    "coverage": "vitest run --coverage --coverage.provider=v8 --coverage.include=src/** --coverage.exclude=**/*.test.*",
+    "srm": "node scripts/srm.ts"
+  },
+  "dependencies": {
+    "@flagsmith/flagsmith": "12.6.0",
+    "@fontsource/ibm-plex-mono": "5.3.0",
+    "@fontsource/ibm-plex-sans": "5.3.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@types/node": "^24.19.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "@vitest/coverage-v8": "3.2.4",
+    "axe-core": "4.14.0",
+    "jsdom": "^26.1.0",
+    "oxlint": "^1.90.0",
+    "typescript": "~7.0.2",
+    "vite": "^8.3.6",
+    "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=22.18"
+  },
+  "license": "MIT"
+}
