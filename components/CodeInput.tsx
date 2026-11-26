@@ -3,7 +3,8 @@
 // The input area. Only the code box is required; the three optional boxes sit behind "Add more context" and each
 // says which check it unlocks. Ctrl/Cmd + Enter scans from any box.
 
-import type { KeyboardEvent, RefObject } from 'react';
+import { useContext, type KeyboardEvent, type RefObject } from 'react';
+import { ShowDemoButtonContext } from './FlagsmithProvider';
 import { ChevronIcon, LockIcon } from './icons';
 
 export type CodeInputValue = { code: string; dependencies: string; metricNames: string; flagJson: string };
@@ -47,6 +48,7 @@ const OPTIONAL_BOXES = [
 
 export function CodeInput(props: Props) {
   const { value, onChange, onScan, busy, codeError, codeRef } = props;
+  const showDemoButton = useContext(ShowDemoButtonContext);
   const set = (field: keyof CodeInputValue) => (event: React.ChangeEvent<HTMLTextAreaElement>) =>
     onChange({ ...value, [field]: event.target.value });
   const filledOptional = OPTIONAL_BOXES.filter((box) => value[box.field].trim() !== '').length;
@@ -139,13 +141,15 @@ export function CodeInput(props: Props) {
         >
           {busy ? 'Scanning…' : 'Scan'}
         </button>
-        <button
-          type="button"
-          onClick={props.onLoadExample}
-          className="inline-flex min-h-11 items-center rounded-full px-4 font-medium text-ink underline decoration-ink/30 hover:decoration-ink"
-        >
-          Load a broken example
-        </button>
+        {showDemoButton && (
+          <button
+            type="button"
+            onClick={props.onLoadExample}
+            className="inline-flex min-h-11 items-center rounded-full px-4 font-medium text-ink underline decoration-ink/30 hover:decoration-ink"
+          >
+            Load a broken example
+          </button>
+        )}
         {props.onUndoExample && (
           <span role="status" className="text-sm text-muted">
             Example loaded.{' '}

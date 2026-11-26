@@ -41,6 +41,10 @@ export function startFlagsmith(environmentID: string, visitorId: string): Promis
   return ready;
 }
 
+export function isDemoButtonEnabled(): boolean {
+  return flagsmith.hasFeature('show_demo_button');
+}
+
 function withTimeout(promise: Promise<boolean>): Promise<boolean> {
   return Promise.race([promise, new Promise<boolean>((resolve) => setTimeout(() => resolve(false), READY_TIMEOUT_MS))]);
 }

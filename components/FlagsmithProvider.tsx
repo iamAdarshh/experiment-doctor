@@ -4,14 +4,22 @@
 // The actual SDK calls are in lib/experiment.ts. Without NEXT_PUBLIC_FLAGSMITH_ENV_ID (local dev without
 // keys) nothing starts, every visitor sees control and no events are sent.
 
-import { useEffect, type ReactNode } from 'react';
-import { startFlagsmith } from '@/lib/experiment';
+import { createContext, useEffect, useState, type ReactNode } from 'react';
+import { isDemoButtonEnabled, startFlagsmith } from '@/lib/experiment';
 import { getVisitorId } from '@/lib/identity';
 
+const environmentID = process.env.NEXT_PUBLIC_FLAGSMITH_ENV_ID;
+export const ShowDemoButtonContext = createContext(!environmentID);
+
 export function FlagsmithProvider({ children }: { children: ReactNode }) {
+  const [showDemoButton, setShowDemoButton] = useState(!environmentID);
+
   useEffect(() => {
-    const environmentID = process.env.NEXT_PUBLIC_FLAGSMITH_ENV_ID;
-    if (environmentID) void startFlagsmith(environmentID, getVisitorId());
+    if (!environmentID) return;
+    void startFlagsmith(environmentID, getVisitorId()).then((loaded) => {
+      if (loaded) setShowDemoButton(isDemoButtonEnabled());
+    });
   }, []);
-  return <>{children}</>;
+
+  return <ShowDemoButtonContext.Provider value={showDemoButton}>{children}</ShowDemoButtonContext.Provider>;
 }
