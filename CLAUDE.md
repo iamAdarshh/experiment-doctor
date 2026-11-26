@@ -70,6 +70,7 @@ npm test             # vitest (all)
 npx vitest run tests/rules/<rule>.test.ts   # one rule
 npm run lint && npm run typecheck
 npm run doctor:self  # run the doctor on our own source (CI does this too)
+npm run real-world   # run the doctor on real public projects (tests/real-world); check after engine changes
 ```
 When a test run fails, re-run only the failing tests while fixing.
 
