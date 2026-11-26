@@ -16,8 +16,10 @@ export const rule: Rule = {
     const issues: Issue[] = [];
     for (const call of flagsmithCalls(code, 'trackEvent')) {
       const eventName = call.firstString;
-      const nameNode = call.args[0];
-      // Names we can't read (variables) are skipped; names starting with `$` are reserved by Flagsmith.
+      // The string itself: the argument, or the value of the constant it names (`const EVENT = 'Purchase'`),
+      // so the issue and the patch point at the text that has to change.
+      const nameNode = call.firstStringNode;
+      // Names we can't read (other variables) are skipped; names starting with `$` are reserved by Flagsmith.
       if (eventName === undefined || !nameNode || eventName.startsWith('$')) continue;
       if (metricNames.includes(eventName)) continue;
       const suggestion = closest(eventName, metricNames);
