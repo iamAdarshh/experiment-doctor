@@ -9,15 +9,16 @@ import { isDemoButtonEnabled, startFlagsmith } from '@/lib/experiment';
 import { getVisitorId } from '@/lib/identity';
 
 const environmentID = process.env.NEXT_PUBLIC_FLAGSMITH_ENV_ID;
-export const ShowDemoButtonContext = createContext(!environmentID);
+const defaultShowDemoButton = process.env.NEXT_PUBLIC_SHOW_DEMO_BUTTON_DEFAULT !== 'false';
+export const ShowDemoButtonContext = createContext(defaultShowDemoButton);
 
 export function FlagsmithProvider({ children }: { children: ReactNode }) {
-  const [showDemoButton, setShowDemoButton] = useState(!environmentID);
+  const [showDemoButton, setShowDemoButton] = useState(defaultShowDemoButton);
 
   useEffect(() => {
     if (!environmentID) return;
     void startFlagsmith(environmentID, getVisitorId()).then((loaded) => {
-      if (loaded) setShowDemoButton(isDemoButtonEnabled());
+      if (loaded) setShowDemoButton(isDemoButtonEnabled(defaultShowDemoButton));
     });
   }, []);
 
