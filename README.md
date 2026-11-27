@@ -53,6 +53,11 @@ We run **two experiments on one flag**, `fix_presentation`:
 2. **Humans (secondary, `Production` environment):** real visitors to the site. Pre-registration:
    [docs/05-experiment-design.md](docs/05-experiment-design.md).
 
+`show_demo_button` controls the built-in broken example. Keep it off in Flagsmith Production throughout the
+human experiment to reduce enrollments driven by the bundled example. Turn it on in Development and use the
+Vercel Preview for the demo video. The deployment default applies while Flagsmith loads, when it is unavailable,
+and when the flag is missing. Once the visitor's flags load, an explicit flag value takes precedence.
+
 Human experiment metrics:
 
 | Metric | Event | Aggregation | Role |
@@ -100,6 +105,7 @@ Add `?arm=patch` to the URL to preview the variant locally; no events are sent t
 | Variable | Where | What |
 | --- | --- | --- |
 | `NEXT_PUBLIC_FLAGSMITH_ENV_ID` | browser | Client environment key (Development locally and on previews, Production on `main`) |
+| `NEXT_PUBLIC_SHOW_DEMO_BUTTON_DEFAULT` | browser | Set to `false` in Vercel Production before building. Leave unset in Preview and locally to show the example by default. |
 | `FLAGSMITH_ADMIN_TOKEN` | server only | Organisation API key, for the results page |
 | `FLAGSMITH_ENV_KEY` | server only | Production environment key, for the Admin API |
 | `FLAGSMITH_EXPERIMENT_ID` | server only | Set after the Production experiment is created |
