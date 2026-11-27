@@ -38,4 +38,52 @@ describe('sdk-too-old', () => {
     const result = runChecks({ code: '', dependencies: '{ "dependencies": { "react": "19.0.0" } }' });
     expect(result.notChecked.find((item) => item.ruleId === 'sdk-too-old')?.reason).toMatch(/No Flagsmith SDK/);
   });
+
+  describe('code with no experiment calls gets a "possible" heads-up, not "certain"', () => {
+    const oldSdk = '{ "dependencies": { "@flagsmith/flagsmith": "12.3.0" } }';
+    const featureFlagsOnly =
+      "import flagsmith from '@flagsmith/flagsmith';\nawait flagsmith.init({ environmentID: 'x' });\nif (flagsmith.hasFeature('new_nav')) showNav();";
+    const sdkIssues = (code: string, dependencies = oldSdk) =>
+      runChecks({ code, dependencies }).issues.filter((issue) => issue.ruleId === 'sdk-too-old');
+
+    it('feature flags only: possible, says why, keeps the patch', () => {
+      const [issue] = sdkIssues(featureFlagsOnly);
+      expect(issue?.confidence).toBe('possible');
+      expect(issue?.message).toContain('no experiment calls yet');
+      expect(issue?.patch).toBeDefined();
+    });
+
+    it('the replaced flagsmith-nodejs package is also only a heads-up', () => {
+      const code = "const Flagsmith = require('flagsmith-nodejs');\nconst client = new Flagsmith({ environmentKey: 'k' });\nclient.getFlags();";
+      expect(sdkIssues(code, '{ "dependencies": { "flagsmith-nodejs": "^2.5.0" } }')[0]?.confidence).toBe('possible');
+    });
+
+    it('stays certain when the code reads an experiment flag', () => {
+      const code = `${featureFlagsOnly}\nconst flag = flagsmith.getExperimentFlag('checkout');`;
+      expect(sdkIssues(code)[0]?.confidence).toBe('certain');
+    });
+
+    it('stays certain when the code tracks a Flagsmith event', () => {
+      expect(sdkIssues(`${featureFlagsOnly}\nflagsmith.trackEvent('purchase');`)[0]?.confidence).toBe('certain');
+    });
+
+    it('stays certain when the code turns on enableEvents', () => {
+      const code = "import flagsmith from '@flagsmith/flagsmith';\nawait flagsmith.init({ environmentID: 'x', enableEvents: true });";
+      expect(sdkIssues(code)[0]?.confidence).toBe('certain');
+    });
+
+    it('stays certain when the options object cannot be read (it might turn on events)', () => {
+      const code = "import flagsmith from '@flagsmith/flagsmith';\nawait flagsmith.init({ ...options });";
+      expect(sdkIssues(code)[0]?.confidence).toBe('certain');
+    });
+
+    it("an analytics tool's trackEvent does not count as an experiment call", () => {
+      expect(sdkIssues(`${featureFlagsOnly}\nanalytics.trackEvent('purchase');`)[0]?.confidence).toBe('possible');
+    });
+
+    it('stays certain when there is no code or it does not parse (we cannot tell)', () => {
+      expect(sdkIssues('')[0]?.confidence).toBe('certain');
+      expect(sdkIssues('const = ;')[0]?.confidence).toBe('certain');
+    });
+  });
 });
